@@ -33,6 +33,31 @@ enum ChangeRequestStatus {
   REJECTED
 }
 
+enum AttendanceRecordStatus {
+  OPEN
+  CLOSED
+}
+
+enum LeaveRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum LeaveApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum NotificationEmailStatus {
+  PENDING
+  SENT
+  SKIPPED
+  FAILED
+}
+
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -49,6 +74,8 @@ model User {
   createdDocuments          EmployeeDocument[]
   mutationsCreated          EmployeeMutation[]
   changeRequestsReviewed    EmployeeChangeRequest[]  @relation("ChangeRequestReviewer")
+  notifications             Notification[]
+  leaveAttachments          LeaveAttachment[]
 
   @@index([email])
   @@map("users")
@@ -132,6 +159,7 @@ model Department {
   employees     Employee[]
   mutationsFrom EmployeeMutation[]  @relation("MutationFromDept")
   mutationsTo   EmployeeMutation[]  @relation("MutationToDept")
+  leavePolicies LeavePolicy[]
 
   @@index([parentId])
   @@map("departments")
@@ -153,6 +181,7 @@ model Position {
   employees     Employee[]
   mutationsFrom EmployeeMutation[]  @relation("MutationFromPos")
   mutationsTo   EmployeeMutation[]  @relation("MutationToPos")
+  leavePolicies LeavePolicy[]
 
   @@index([parentId])
   @@index([departmentId])
@@ -181,10 +210,15 @@ model Employee {
   position       Position                @relation(fields: [positionId], references: [id])
   manager        Employee?               @relation("EmployeeManager", fields: [managerId], references: [id])
   reports        Employee[]              @relation("EmployeeManager")
-  user           User?
-  mutations      EmployeeMutation[]
-  documents      EmployeeDocument[]
-  changeRequests EmployeeChangeRequest[]
+  user              User?
+  mutations         EmployeeMutation[]
+  documents         EmployeeDocument[]
+  changeRequests    EmployeeChangeRequest[]
+  shiftAssignments  ShiftAssignment[]
+  attendanceRecords AttendanceRecord[]
+  leaveBalances     LeaveBalance[]
+  leaveRequests     LeaveRequest[]
+  leaveApprovals    LeaveApproval[]
 
   @@index([departmentId])
   @@index([positionId])
@@ -269,4 +303,202 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([actorUserId])
   @@map("audit_logs")
+}
+
+model Shift {
+  id                 String   @id @default(cuid())
+  name               String
+  code               String   @unique
+  startMinutes       Int
+  endMinutes         Int
+  graceMinutesLate   Int      @default(0)
+  graceMinutesEarly  Int      @default(0)
+  isFlexible         Boolean  @default(false)
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  assignments ShiftAssignment[]
+  records     AttendanceRecord[]
+
+  @@map("shifts")
+}
+
+model ShiftAssignment {
+  id            String    @id @default(cuid())
+  employeeId    String
+  shiftId       String
+  effectiveFrom DateTime  @db.Date
+  effectiveTo   DateTime? @db.Date
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+  shift    Shift    @relation(fields: [shiftId], references: [id])
+
+  @@index([employeeId, effectiveFrom])
+  @@index([shiftId])
+  @@map("shift_assignments")
+}
+
+model AttendanceRecord {
+  id                String                 @id @default(cuid())
+  employeeId        String
+  shiftId           String
+  workDate          DateTime               @db.Date
+  checkedInAt       DateTime
+  checkedOutAt      DateTime?
+  workedMinutes     Int?
+  lateMinutes       Int                    @default(0)
+  earlyLeaveMinutes Int                    @default(0)
+  status            AttendanceRecordStatus @default(OPEN)
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+  shift    Shift    @relation(fields: [shiftId], references: [id])
+
+  @@unique([employeeId, workDate])
+  @@index([workDate, status])
+  @@index([shiftId])
+  @@map("attendance_records")
+}
+
+model LeaveType {
+  id                  String   @id @default(cuid())
+  code                String   @unique
+  name                String
+  requiresBalance     Boolean  @default(true)
+  requiresAttachment  Boolean  @default(false)
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  policies  LeavePolicy[]
+  balances  LeaveBalance[]
+  requests  LeaveRequest[]
+
+  @@map("leave_types")
+}
+
+model LeavePolicy {
+  id                  String   @id @default(cuid())
+  leaveTypeId         String
+  departmentId        String?
+  positionId          String?
+  annualAllowanceDays Int
+  approvalLevelCount  Int      @default(2)
+  accrualPerMonth     Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  leaveType  LeaveType   @relation(fields: [leaveTypeId], references: [id])
+  department Department? @relation(fields: [departmentId], references: [id])
+  position   Position?   @relation(fields: [positionId], references: [id])
+
+  @@index([leaveTypeId])
+  @@index([departmentId])
+  @@index([positionId])
+  @@map("leave_policies")
+}
+
+model LeaveBalance {
+  id                  String   @id @default(cuid())
+  employeeId          String
+  leaveTypeId         String
+  year                Int
+  entitledDays        Int      @default(0)
+  usedDays            Int      @default(0)
+  pendingDays         Int      @default(0)
+  lastAccruedYearMonth Int?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  employee  Employee  @relation(fields: [employeeId], references: [id])
+  leaveType LeaveType @relation(fields: [leaveTypeId], references: [id])
+
+  @@unique([employeeId, leaveTypeId, year])
+  @@index([leaveTypeId])
+  @@map("leave_balances")
+}
+
+model LeaveRequest {
+  id            String             @id @default(cuid())
+  employeeId    String
+  leaveTypeId   String
+  startDate     DateTime           @db.Date
+  endDate       DateTime           @db.Date
+  days          Int
+  reason        String
+  status        LeaveRequestStatus @default(PENDING)
+  currentStep   Int                @default(1)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  employee    Employee          @relation(fields: [employeeId], references: [id])
+  leaveType   LeaveType         @relation(fields: [leaveTypeId], references: [id])
+  approvals   LeaveApproval[]
+  attachments LeaveAttachment[]
+
+  @@index([employeeId, status])
+  @@index([leaveTypeId])
+  @@index([startDate, endDate])
+  @@map("leave_requests")
+}
+
+model LeaveApproval {
+  id                  String              @id @default(cuid())
+  requestId           String
+  step                Int
+  approverEmployeeId  String?
+  status              LeaveApprovalStatus @default(PENDING)
+  comment             String?
+  decidedAt           DateTime?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  request  LeaveRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  approver Employee?    @relation(fields: [approverEmployeeId], references: [id])
+
+  @@unique([requestId, step])
+  @@index([approverEmployeeId, status])
+  @@map("leave_approvals")
+}
+
+model LeaveAttachment {
+  id               String   @id @default(cuid())
+  requestId        String
+  fileName         String
+  contentType      String
+  sizeBytes        Int
+  objectKey        String
+  uploadedByUserId String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  request    LeaveRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  uploadedBy User         @relation(fields: [uploadedByUserId], references: [id])
+
+  @@index([requestId])
+  @@map("leave_attachments")
+}
+
+model Notification {
+  id              String                   @id @default(cuid())
+  recipientUserId String
+  type            String
+  title           String
+  body            String
+  entityType      String
+  entityId        String
+  readAt          DateTime?
+  emailStatus     NotificationEmailStatus  @default(PENDING)
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+
+  recipient User @relation(fields: [recipientUserId], references: [id], onDelete: Cascade)
+
+  @@index([recipientUserId, readAt])
+  @@index([entityType, entityId])
+  @@map("notifications")
 }

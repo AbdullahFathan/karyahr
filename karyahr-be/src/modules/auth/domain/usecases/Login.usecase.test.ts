@@ -26,6 +26,12 @@ class MemoryUsers implements IUserRepository {
   async findById(id: string): Promise<AuthUser | null> {
     return this.record && this.record.id === id ? this.record : null;
   }
+  async findByEmployeeId(employeeId: string): Promise<AuthUser | null> {
+    return this.record && this.record.employeeId === employeeId ? this.record : null;
+  }
+  async listByRoleName(): Promise<readonly AuthUser[]> {
+    return this.record ? [this.record] : [];
+  }
   async setActiveByEmployeeId(): Promise<void> {}
 }
 

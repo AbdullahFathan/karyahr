@@ -8,6 +8,7 @@ import type {
 } from "../domain/entities/Employee";
 import type {
   CreateEmployeeInput,
+  EmployeeDirectoryFilter,
   EmployeeListFilter,
   EmployeeListResult,
   IEmployeeChangeRequestRepository,
@@ -102,6 +103,17 @@ export class PrismaEmployeeRepository implements IEmployeeRepository {
       }),
     ]);
     return { total, items: rows.map(toEmployee) };
+  }
+
+  async listDirectory(filter: EmployeeDirectoryFilter): Promise<readonly Employee[]> {
+    const rows = await this.prisma.employee.findMany({
+      where: {
+        managerId: filter.managerId,
+        status: filter.statuses ? { in: [...filter.statuses] } : undefined,
+      },
+      orderBy: { fullName: "asc" },
+    });
+    return rows.map(toEmployee);
   }
 }
 

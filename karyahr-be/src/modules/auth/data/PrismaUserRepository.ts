@@ -60,6 +60,22 @@ export class PrismaUserRepository implements IUserRepository {
     return user ? toAuthUser(user) : null;
   }
 
+  async findByEmployeeId(employeeId: string): Promise<AuthUser | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { employeeId },
+      include: userInclude,
+    });
+    return user ? toAuthUser(user) : null;
+  }
+
+  async listByRoleName(roleName: string): Promise<readonly AuthUser[]> {
+    const users = await this.prisma.user.findMany({
+      where: { roles: { some: { role: { name: roleName } } }, isActive: true },
+      include: userInclude,
+    });
+    return users.map(toAuthUser);
+  }
+
   async setActiveByEmployeeId(employeeId: string, isActive: boolean): Promise<void> {
     await this.prisma.user.updateMany({
       where: { employeeId },

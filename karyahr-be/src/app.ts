@@ -5,8 +5,11 @@ import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import pinoHttp from "pino-http";
 import { corsOrigins } from "./config/env";
+import { createAttendanceRouter } from "./modules/attendance/presentation/routes/attendance.routes";
 import { createAuthRouter } from "./modules/auth/presentation/routes/auth.routes";
 import { createEmployeeRouter } from "./modules/employees/presentation/routes/employees.routes";
+import { createLeaveRouter } from "./modules/leave/presentation/routes/leave.routes";
+import { createNotificationRouter } from "./modules/notifications/presentation/routes/notifications.routes";
 import { createOrgRouter } from "./modules/organization/presentation/routes/org.routes";
 import { createSystemRouter } from "./modules/system/presentation/routes/system.routes";
 import { health, ready } from "./shared/health/health.controller";
@@ -51,6 +54,9 @@ export function createApp(): Express {
   app.use(createAuthRouter());
   app.use(createOrgRouter());
   app.use(createEmployeeRouter());
+  app.use(createAttendanceRouter());
+  app.use(createLeaveRouter());
+  app.use(createNotificationRouter());
 
   app.use(notFoundHandler);
   app.use(errorHandler);

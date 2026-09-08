@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "bun --watch --env-file=.env.local src/server.ts",
     "start": "bun --env-file=.env.local src/server.ts",
+    "worker": "bun --env-file=.env.local src/worker.ts",
+    "worker:dev": "bun --watch --env-file=.env.local src/worker.ts",
     "test": "bun test",
     "prisma": "bun --bun --env-file=.env.local x prisma",
     "prisma:migrate": "bun --bun --env-file=.env.local x prisma migrate dev",
