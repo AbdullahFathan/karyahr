@@ -1,0 +1,45 @@
+{
+  "name": "karyahr-be",
+  "module": "src/server.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "bun --watch --env-file=.env.local src/server.ts",
+    "start": "bun --env-file=.env.local src/server.ts",
+    "test": "bun test",
+    "prisma": "bun --bun --env-file=.env.local x prisma",
+    "prisma:migrate": "bun --bun --env-file=.env.local x prisma migrate dev",
+    "prisma:generate": "bun --bun --env-file=.env.local x prisma generate",
+    "prisma:push": "bun --bun --env-file=.env.local x prisma db push",
+    "prisma:seed": "bun --bun --env-file=.env.local x prisma db seed"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.2",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.5.0",
+    "@types/nodemailer": "^7.0.4",
+    "@types/pg": "^8.23.1",
+    "prisma": "^7.10.0"
+  },
+  "peerDependencies": {
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.10.0",
+    "@prisma/client": "^7.10.0",
+    "@prisma/config": "7.10.0",
+    "bullmq": "^5.66.5",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.7.0",
+    "helmet": "^8.3.0",
+    "ioredis": "^5.8.2",
+    "nodemailer": "^7.0.11",
+    "pg": "^8.23.0",
+    "pino": "^10.3.1",
+    "pino-http": "^11.0.0",
+    "zod": "^4.5.4"
+  }
+}
