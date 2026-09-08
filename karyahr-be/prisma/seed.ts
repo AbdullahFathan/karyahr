@@ -1,11 +1,19 @@
+import { getPrisma, disconnectPrisma } from "../src/shared/database/prisma";
+import { seedAuth } from "../src/modules/auth/data/seed";
+
 /**
- * Seed aggregator. Per-module seeds live in `src/modules/<feature>/data/seed.ts` (Phase 1).
+ * Seed aggregator. Per-module seeds live in `src/modules/<feature>/data/seed.ts`.
  */
 async function main(): Promise<void> {
-  // No seed data in Phase 0.
+  const prisma = getPrisma();
+  await seedAuth(prisma);
 }
 
-main().catch((error: unknown) => {
-  console.error(error);
-  process.exit(1);
-});
+main()
+  .catch((error: unknown) => {
+    console.error(error);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await disconnectPrisma();
+  });

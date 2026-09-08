@@ -6,3 +6,267 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum EmployeeStatus {
+  ACTIVE
+  PROBATION
+  INACTIVE
+}
+
+enum ContractType {
+  PERMANENT
+  CONTRACT
+  INTERNSHIP
+}
+
+enum DocumentType {
+  KTP
+  NPWP
+  DIPLOMA
+  CONTRACT
+  OTHER
+}
+
+enum ChangeRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  employeeId   String   @unique
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  employee                  Employee                 @relation(fields: [employeeId], references: [id])
+  roles                     UserRole[]
+  refreshTokens             RefreshToken[]
+  auditLogs                 AuditLog[]
+  createdDocuments          EmployeeDocument[]
+  mutationsCreated          EmployeeMutation[]
+  changeRequestsReviewed    EmployeeChangeRequest[]  @relation("ChangeRequestReviewer")
+
+  @@index([email])
+  @@map("users")
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  permissions RolePermission[]
+  users       UserRole[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  roles RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model UserRole {
+  userId String
+  roleId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  userId    String
+  expiresAt DateTime
+  revokedAt DateTime?
+  userAgent String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model Department {
+  id        String   @id @default(cuid())
+  name      String
+  code      String   @unique
+  parentId  String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  parent        Department?         @relation("DepartmentTree", fields: [parentId], references: [id])
+  children      Department[]        @relation("DepartmentTree")
+  positions     Position[]
+  employees     Employee[]
+  mutationsFrom EmployeeMutation[]  @relation("MutationFromDept")
+  mutationsTo   EmployeeMutation[]  @relation("MutationToDept")
+
+  @@index([parentId])
+  @@map("departments")
+}
+
+model Position {
+  id           String   @id @default(cuid())
+  name         String
+  code         String   @unique
+  parentId     String?
+  departmentId String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  parent        Position?           @relation("PositionTree", fields: [parentId], references: [id])
+  children      Position[]          @relation("PositionTree")
+  department    Department?         @relation(fields: [departmentId], references: [id])
+  employees     Employee[]
+  mutationsFrom EmployeeMutation[]  @relation("MutationFromPos")
+  mutationsTo   EmployeeMutation[]  @relation("MutationToPos")
+
+  @@index([parentId])
+  @@index([departmentId])
+  @@map("positions")
+}
+
+model Employee {
+  id               String         @id @default(cuid())
+  fullName         String
+  nationalId       String         @unique
+  birthDate        DateTime       @db.Date
+  address          String
+  phone            String
+  emergencyContact String
+  employeeNumber   String         @unique
+  departmentId     String
+  positionId       String
+  managerId        String?
+  joinedAt         DateTime       @db.Date
+  status           EmployeeStatus
+  contractType     ContractType
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  department     Department              @relation(fields: [departmentId], references: [id])
+  position       Position                @relation(fields: [positionId], references: [id])
+  manager        Employee?               @relation("EmployeeManager", fields: [managerId], references: [id])
+  reports        Employee[]              @relation("EmployeeManager")
+  user           User?
+  mutations      EmployeeMutation[]
+  documents      EmployeeDocument[]
+  changeRequests EmployeeChangeRequest[]
+
+  @@index([departmentId])
+  @@index([positionId])
+  @@index([managerId])
+  @@index([status])
+  @@map("employees")
+}
+
+model EmployeeMutation {
+  id               String   @id @default(cuid())
+  employeeId       String
+  fromDepartmentId String
+  toDepartmentId   String
+  fromPositionId   String
+  toPositionId     String
+  effectiveAt      DateTime
+  reason           String
+  createdByUserId  String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  employee       Employee   @relation(fields: [employeeId], references: [id])
+  fromDepartment Department @relation("MutationFromDept", fields: [fromDepartmentId], references: [id])
+  toDepartment   Department @relation("MutationToDept", fields: [toDepartmentId], references: [id])
+  fromPosition   Position   @relation("MutationFromPos", fields: [fromPositionId], references: [id])
+  toPosition     Position   @relation("MutationToPos", fields: [toPositionId], references: [id])
+  createdBy      User       @relation(fields: [createdByUserId], references: [id])
+
+  @@index([employeeId])
+  @@map("employee_mutations")
+}
+
+model EmployeeDocument {
+  id               String       @id @default(cuid())
+  employeeId       String
+  type             DocumentType
+  fileName         String
+  contentType      String
+  sizeBytes        Int
+  objectKey        String
+  uploadedByUserId String
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  uploadedBy User     @relation(fields: [uploadedByUserId], references: [id])
+
+  @@index([employeeId])
+  @@map("employee_documents")
+}
+
+model EmployeeChangeRequest {
+  id             String              @id @default(cuid())
+  employeeId     String
+  payload        Json
+  status         ChangeRequestStatus @default(PENDING)
+  reviewerUserId String?
+  reviewNote     String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+  reviewer User?    @relation("ChangeRequestReviewer", fields: [reviewerUserId], references: [id])
+
+  @@index([employeeId])
+  @@index([status])
+  @@map("employee_change_requests")
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String
+  entityType  String
+  entityId    String
+  action      String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  actor User @relation(fields: [actorUserId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([actorUserId])
+  @@map("audit_logs")
+}

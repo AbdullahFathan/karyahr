@@ -14,6 +14,31 @@ const envSchema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
   SMTP_FROM: z.string().optional(),
+  JWT_SECRET: z.string().min(32),
+  JWT_ACCESS_TTL_SECONDS: z.coerce.number().int().positive().default(900),
+  JWT_REFRESH_TTL_SECONDS: z.coerce.number().int().positive().default(604800),
+  COOKIE_SECURE: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((value) => value === "true"),
+  MINIO_ENDPOINT: z.string().min(1),
+  MINIO_PORT: z.coerce.number().int().positive().default(9000),
+  MINIO_ACCESS_KEY: z.string().min(1),
+  MINIO_SECRET_KEY: z.string().min(1),
+  MINIO_BUCKET: z.string().min(1).default("karyahr"),
+  MINIO_USE_SSL: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((value) => value === "true"),
+  MAX_UPLOAD_BYTES: z.coerce.number().int().positive().default(10 * 1024 * 1024),
+  SEED_ADMIN_EMAIL: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.email().optional(),
+  ),
+  SEED_ADMIN_PASSWORD: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().min(8).optional(),
+  ),
 });
 
 export type AppEnv = z.infer<typeof envSchema>;

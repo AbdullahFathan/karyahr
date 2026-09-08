@@ -43,6 +43,26 @@ export class ConflictError extends AppError {
   }
 }
 
+/**
+ * Caller is not authenticated.
+ */
+export class UnauthorizedError extends AppError {
+  constructor(message = "Unauthorized") {
+    super(message, 401, "UNAUTHORIZED");
+    this.name = "UnauthorizedError";
+  }
+}
+
+/**
+ * Caller lacks permission for the resource.
+ */
+export class ForbiddenError extends AppError {
+  constructor(message = "Forbidden") {
+    super(message, 403, "FORBIDDEN");
+    this.name = "ForbiddenError";
+  }
+}
+
 export type ErrorBody = {
   readonly error: string;
   readonly message: string;

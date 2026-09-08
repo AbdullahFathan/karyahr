@@ -2,7 +2,9 @@ import { describe, expect, test } from "bun:test";
 import {
   AppError,
   ConflictError,
+  ForbiddenError,
   NotFoundError,
+  UnauthorizedError,
   ValidationError,
   mapError,
 } from "./app-error";
@@ -13,6 +15,8 @@ describe("mapError", () => {
     expect(mapError(new NotFoundError("missing")).body.error).toBe("NOT_FOUND");
     expect(mapError(new ValidationError()).statusCode).toBe(400);
     expect(mapError(new ConflictError()).statusCode).toBe(409);
+    expect(mapError(new UnauthorizedError()).statusCode).toBe(401);
+    expect(mapError(new ForbiddenError()).statusCode).toBe(403);
     expect(mapError(new AppError("denied", 403, "FORBIDDEN")).statusCode).toBe(403);
   });
 

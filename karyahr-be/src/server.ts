@@ -1,5 +1,6 @@
 import { env } from "./config/env";
 import { disconnectRedis } from "./config/redis";
+import { ensureBucket } from "./config/storage";
 import { createApp } from "./app";
 import { disconnectPrisma } from "./shared/database/prisma";
 import { closeQueues } from "./shared/queue/producer";
@@ -7,6 +8,10 @@ import { logger } from "./shared/utils/logger";
 
 const app = createApp();
 const { PORT } = env();
+
+void ensureBucket().catch((error: unknown) => {
+  logger.error({ err: error }, "Failed to ensure MinIO bucket");
+});
 
 const server = app.listen(PORT, () => {
   logger.info({ port: PORT }, "Server listening");
