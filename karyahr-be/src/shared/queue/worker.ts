@@ -7,6 +7,7 @@ import {
   PrismaLeavePolicyRepository,
   PrismaLeaveTypeRepository,
 } from "../../modules/leave/data/PrismaLeaveRepository";
+import { processPayrollJob } from "../../modules/payroll/data/process-payroll-job";
 import { AccrueAnnualLeaveUseCase } from "../../modules/leave/domain/usecases/AccrueAnnualLeave.usecase";
 import { processNotificationJob } from "../../modules/notifications/data/process-notification-job";
 import { logger } from "../utils/logger";
@@ -42,6 +43,19 @@ export function createLeaveAccrualWorker(): Worker {
       );
       const result = await useCase.execute();
       logger.info({ jobId: job.id, accrued: result.accrued }, "Leave accrual completed");
+    },
+    { connection: getBullmqConnection() },
+  );
+}
+
+/**
+ * Starts the payroll worker.
+ */
+export function createPayrollWorker(): Worker {
+  return new Worker(
+    QUEUE_NAMES.payroll,
+    async (job: Job) => {
+      await processPayrollJob(job);
     },
     { connection: getBullmqConnection() },
   );

@@ -15,8 +15,10 @@ import type {
   IShiftRepository,
 } from "../repositories/IAttendanceRepository";
 import {
+  checkOutWindow,
   earlyLeaveMinutes,
   lateMinutes,
+  overtimeMinutes,
   shiftWindow,
   workedMinutes,
 } from "../shift-window";
@@ -91,6 +93,7 @@ export class CheckInUseCase {
       workedMinutes: null,
       lateMinutes: lateMinutes(shift, window, now),
       earlyLeaveMinutes: 0,
+      overtimeMinutes: 0,
       status: "OPEN",
     });
   }
@@ -114,12 +117,15 @@ export class CheckOutUseCase {
     if (!shift) {
       throw new NotFoundError("Shift not found for open attendance");
     }
-    const window = shiftWindow(shift, open.workDate);
+    const scheduled = shiftWindow(shift, open.workDate);
+    const window = checkOutWindow(shift, open.workDate);
     assertInsideShiftWindow(now, shift, window);
+    const worked = workedMinutes(open.checkedInAt, now);
     return this.records.update(open.id, {
       checkedOutAt: now,
-      workedMinutes: workedMinutes(open.checkedInAt, now),
-      earlyLeaveMinutes: earlyLeaveMinutes(shift, window, now),
+      workedMinutes: worked,
+      earlyLeaveMinutes: earlyLeaveMinutes(shift, scheduled, now),
+      overtimeMinutes: overtimeMinutes(shift, worked),
       status: "CLOSED",
     });
   }

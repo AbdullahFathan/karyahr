@@ -28,6 +28,12 @@ export const PERMISSIONS = {
   LEAVE_TYPES_WRITE: "leave:types:write",
   LEAVE_POLICIES_WRITE: "leave:policies:write",
   NOTIFICATIONS_ME: "notifications:me",
+  PAYROLL_COMPONENTS_WRITE: "payroll:components:write",
+  PAYROLL_PROFILE_WRITE: "payroll:profile:write",
+  PAYROLL_RUNS_WRITE: "payroll:runs:write",
+  PAYROLL_RUNS_READ: "payroll:runs:read",
+  PAYSLIPS_ME: "payslips:me",
+  PAYROLL_EXPORT: "payroll:export",
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -45,6 +51,7 @@ export const EMPLOYEE_ROLE_PERMISSIONS: readonly PermissionKey[] = [
   PERMISSIONS.LEAVE_BALANCES_ME,
   PERMISSIONS.LEAVE_REQUESTS_ME,
   PERMISSIONS.NOTIFICATIONS_ME,
+  PERMISSIONS.PAYSLIPS_ME,
 ];
 
 export const MANAGER_ROLE_PERMISSIONS: readonly PermissionKey[] = [

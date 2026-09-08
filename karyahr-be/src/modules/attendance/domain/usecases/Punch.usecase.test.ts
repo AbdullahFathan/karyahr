@@ -18,6 +18,7 @@ const pagi: Shift = {
   endMinutes: 17 * 60,
   graceMinutesLate: 15,
   graceMinutesEarly: 0,
+  overtimeCapMinutes: 180,
   isFlexible: false,
   isActive: true,
 };
@@ -30,6 +31,7 @@ const malam: Shift = {
   endMinutes: 6 * 60,
   graceMinutesLate: 0,
   graceMinutesEarly: 0,
+  overtimeCapMinutes: 0,
   isFlexible: false,
   isActive: true,
 };
@@ -220,5 +222,26 @@ describe("CheckOutUseCase", () => {
     expect(closed.status).toBe("CLOSED");
     expect(closed.earlyLeaveMinutes).toBe(60);
     expect(closed.workedMinutes).toBe(8 * 60);
+    expect(closed.overtimeMinutes).toBe(0);
+  });
+
+  test("allows check-out after shift end and records overtime", async () => {
+    const records = new MemoryRecords();
+    await new CheckInUseCase(
+      new MemoryAssignments(assignment),
+      new MemoryShifts([pagi]),
+      records,
+      new MemoryLeave(false),
+      clockAt("2026-09-08T01:00:00.000Z"),
+    ).execute("e1");
+    const closed = await new CheckOutUseCase(
+      new MemoryAssignments(assignment),
+      new MemoryShifts([pagi]),
+      records,
+      clockAt("2026-09-08T11:00:00.000Z"),
+    ).execute("e1");
+    expect(closed.status).toBe("CLOSED");
+    expect(closed.overtimeMinutes).toBe(60);
+    expect(closed.workedMinutes).toBe(10 * 60);
   });
 });

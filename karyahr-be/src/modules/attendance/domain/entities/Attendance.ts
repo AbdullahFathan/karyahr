@@ -9,6 +9,7 @@ export type Shift = {
   readonly endMinutes: number;
   readonly graceMinutesLate: number;
   readonly graceMinutesEarly: number;
+  readonly overtimeCapMinutes: number;
   readonly isFlexible: boolean;
   readonly isActive: boolean;
 };
@@ -31,5 +32,6 @@ export type AttendanceRecord = {
   readonly workedMinutes: number | null;
   readonly lateMinutes: number;
   readonly earlyLeaveMinutes: number;
+  readonly overtimeMinutes: number;
   readonly status: AttendanceRecordStatus;
 };

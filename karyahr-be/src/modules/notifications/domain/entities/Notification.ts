@@ -1,7 +1,11 @@
 export const NOTIFICATION_EMAIL_STATUSES = ["PENDING", "SENT", "SKIPPED", "FAILED"] as const;
 export type NotificationEmailStatus = (typeof NOTIFICATION_EMAIL_STATUSES)[number];
 
-export const NOTIFICATION_JOB_TYPES = ["leave.submitted", "leave.decided"] as const;
+export const NOTIFICATION_JOB_TYPES = [
+  "leave.submitted",
+  "leave.decided",
+  "payroll.payslip_ready",
+] as const;
 export type NotificationJobType = (typeof NOTIFICATION_JOB_TYPES)[number];
 
 export type InAppNotification = {

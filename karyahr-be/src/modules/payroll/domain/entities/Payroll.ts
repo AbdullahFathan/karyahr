@@ -1,0 +1,125 @@
+export const PTKP_STATUSES = ["TK_0", "TK_1", "TK_2", "TK_3", "K_0", "K_1", "K_2", "K_3"] as const;
+export type PtkpStatus = (typeof PTKP_STATUSES)[number];
+
+export const TAX_METHODS = ["GROSS", "GROSS_UP", "NETT"] as const;
+export type TaxMethod = (typeof TAX_METHODS)[number];
+
+export const SALARY_COMPONENT_KINDS = [
+  "BASIC",
+  "ALLOWANCE_FIXED",
+  "ALLOWANCE_VARIABLE",
+  "DEDUCTION",
+] as const;
+export type SalaryComponentKind = (typeof SALARY_COMPONENT_KINDS)[number];
+
+export const PAYROLL_PERIOD_TYPES = ["MONTHLY", "SEMI_MONTHLY", "WEEKLY"] as const;
+export type PayrollPeriodType = (typeof PAYROLL_PERIOD_TYPES)[number];
+
+export const PAYROLL_RUN_STATUSES = ["PENDING", "PROCESSING", "COMPLETED", "FAILED"] as const;
+export type PayrollRunStatus = (typeof PAYROLL_RUN_STATUSES)[number];
+
+export const PAYROLL_EXPORT_KINDS = [
+  "ACCOUNTING",
+  "PPH21_MONTHLY",
+  "PPH21_1721_A1",
+  "BANK_TRANSFER",
+] as const;
+export type PayrollExportKind = (typeof PAYROLL_EXPORT_KINDS)[number];
+
+export const PAYSLIP_LINE_KINDS = [
+  "EARNING",
+  "OVERTIME",
+  "GROSS_UP_ALLOWANCE",
+  "DEDUCTION",
+  "BPJS_EMPLOYEE",
+  "PPH21",
+  "PPH21_EMPLOYER",
+  "BPJS_EMPLOYER",
+] as const;
+export type PayslipLineKind = (typeof PAYSLIP_LINE_KINDS)[number];
+
+export type EmployeePayrollProfile = {
+  readonly id: string;
+  readonly employeeId: string;
+  readonly ptkpStatus: PtkpStatus;
+  readonly taxMethod: TaxMethod;
+  readonly npwp: string | null;
+  readonly bankName: string;
+  readonly bankAccountNumber: string;
+  readonly bankAccountName: string;
+  readonly bpjsKesehatanEnrolled: boolean;
+  readonly bpjsTkEnrolled: boolean;
+};
+
+export type SalaryComponent = {
+  readonly id: string;
+  readonly code: string;
+  readonly name: string;
+  readonly kind: SalaryComponentKind;
+  readonly isTaxable: boolean;
+  readonly isActive: boolean;
+};
+
+export type EmployeeSalaryAssignment = {
+  readonly id: string;
+  readonly employeeId: string;
+  readonly componentId: string;
+  readonly amountRupiah: bigint;
+  readonly effectiveFrom: Date;
+  readonly effectiveTo: Date | null;
+};
+
+export type PayrollRunSkip = {
+  readonly employeeId: string;
+  readonly reason: string;
+};
+
+export type PayrollRun = {
+  readonly id: string;
+  readonly periodType: PayrollPeriodType;
+  readonly periodStart: Date;
+  readonly periodEnd: Date;
+  readonly status: PayrollRunStatus;
+  readonly triggeredByUserId: string;
+  readonly errorMessage: string | null;
+  readonly processedCount: number;
+  readonly skippedCount: number;
+  readonly skipReasons: readonly PayrollRunSkip[];
+};
+
+export type PayslipLine = {
+  readonly code: string;
+  readonly name: string;
+  readonly kind: PayslipLineKind;
+  readonly amountRupiah: bigint;
+};
+
+export type Payslip = {
+  readonly id: string;
+  readonly payrollRunId: string;
+  readonly employeeId: string;
+  readonly grossRupiah: bigint;
+  readonly statutoryRupiah: bigint;
+  readonly netRupiah: bigint;
+  readonly lines: readonly PayslipLine[];
+  readonly pdfObjectKey: string | null;
+};
+
+export type PayrollExport = {
+  readonly id: string;
+  readonly payrollRunId: string;
+  readonly kind: PayrollExportKind;
+  readonly objectKey: string;
+};
+
+export type PayrollEmployeeSnapshot = {
+  readonly employeeId: string;
+  readonly userId: string | null;
+  readonly fullName: string;
+  readonly employeeNumber: string;
+  readonly profile: EmployeePayrollProfile;
+  readonly assignments: readonly {
+    readonly component: SalaryComponent;
+    readonly amountRupiah: bigint;
+  }[];
+};

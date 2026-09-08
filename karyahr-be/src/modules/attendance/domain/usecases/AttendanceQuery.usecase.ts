@@ -184,6 +184,7 @@ export class ExportAttendanceCsvUseCase {
       "workedMinutes",
       "lateMinutes",
       "earlyLeaveMinutes",
+      "overtimeMinutes",
     ];
     const lines = rows.map((row) =>
       [
@@ -195,6 +196,7 @@ export class ExportAttendanceCsvUseCase {
         row.workedMinutes ?? "",
         row.lateMinutes,
         row.earlyLeaveMinutes,
+        row.overtimeMinutes,
       ].join(","),
     );
     return [header.join(","), ...lines].join("\n");

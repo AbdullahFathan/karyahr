@@ -11,6 +11,7 @@ import { createEmployeeRouter } from "./modules/employees/presentation/routes/em
 import { createLeaveRouter } from "./modules/leave/presentation/routes/leave.routes";
 import { createNotificationRouter } from "./modules/notifications/presentation/routes/notifications.routes";
 import { createOrgRouter } from "./modules/organization/presentation/routes/org.routes";
+import { createPayrollRouter } from "./modules/payroll/presentation/routes/payroll.routes";
 import { createSystemRouter } from "./modules/system/presentation/routes/system.routes";
 import { health, ready } from "./shared/health/health.controller";
 import { cookieParser } from "./shared/middleware/cookie-parser";
@@ -57,6 +58,7 @@ export function createApp(): Express {
   app.use(createAttendanceRouter());
   app.use(createLeaveRouter());
   app.use(createNotificationRouter());
+  app.use(createPayrollRouter());
 
   app.use(notFoundHandler);
   app.use(errorHandler);

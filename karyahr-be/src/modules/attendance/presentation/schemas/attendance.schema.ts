@@ -9,6 +9,7 @@ export const createShiftSchema = z.object({
   endMinutes: z.number().int().min(0).max(1439),
   graceMinutesLate: z.number().int().min(0).max(180).default(0),
   graceMinutesEarly: z.number().int().min(0).max(180).default(0),
+  overtimeCapMinutes: z.number().int().min(0).max(720).default(0),
   isFlexible: z.boolean().default(false),
   isActive: z.boolean().default(true),
 });

@@ -58,6 +58,50 @@ enum NotificationEmailStatus {
   FAILED
 }
 
+enum PtkpStatus {
+  TK_0
+  TK_1
+  TK_2
+  TK_3
+  K_0
+  K_1
+  K_2
+  K_3
+}
+
+enum TaxMethod {
+  GROSS
+  GROSS_UP
+  NETT
+}
+
+enum SalaryComponentKind {
+  BASIC
+  ALLOWANCE_FIXED
+  ALLOWANCE_VARIABLE
+  DEDUCTION
+}
+
+enum PayrollPeriodType {
+  MONTHLY
+  SEMI_MONTHLY
+  WEEKLY
+}
+
+enum PayrollRunStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum PayrollExportKind {
+  ACCOUNTING
+  PPH21_MONTHLY
+  PPH21_1721_A1
+  BANK_TRANSFER
+}
+
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -76,6 +120,7 @@ model User {
   changeRequestsReviewed    EmployeeChangeRequest[]  @relation("ChangeRequestReviewer")
   notifications             Notification[]
   leaveAttachments          LeaveAttachment[]
+  payrollRunsTriggered      PayrollRun[]
 
   @@index([email])
   @@map("users")
@@ -219,6 +264,9 @@ model Employee {
   leaveBalances     LeaveBalance[]
   leaveRequests     LeaveRequest[]
   leaveApprovals    LeaveApproval[]
+  payrollProfile    EmployeePayrollProfile?
+  salaryAssignments EmployeeSalaryAssignment[]
+  payslips          Payslip[]
 
   @@index([departmentId])
   @@index([positionId])
@@ -311,9 +359,10 @@ model Shift {
   code               String   @unique
   startMinutes       Int
   endMinutes         Int
-  graceMinutesLate   Int      @default(0)
-  graceMinutesEarly  Int      @default(0)
-  isFlexible         Boolean  @default(false)
+  graceMinutesLate     Int      @default(0)
+  graceMinutesEarly    Int      @default(0)
+  overtimeCapMinutes   Int      @default(0)
+  isFlexible           Boolean  @default(false)
   isActive           Boolean  @default(true)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
@@ -351,6 +400,7 @@ model AttendanceRecord {
   workedMinutes     Int?
   lateMinutes       Int                    @default(0)
   earlyLeaveMinutes Int                    @default(0)
+  overtimeMinutes   Int                    @default(0)
   status            AttendanceRecordStatus @default(OPEN)
   createdAt         DateTime               @default(now())
   updatedAt         DateTime               @updatedAt
@@ -501,4 +551,123 @@ model Notification {
   @@index([recipientUserId, readAt])
   @@index([entityType, entityId])
   @@map("notifications")
+}
+
+model EmployeePayrollProfile {
+  id                     String     @id @default(cuid())
+  employeeId             String     @unique
+  ptkpStatus             PtkpStatus
+  taxMethod              TaxMethod
+  npwp                   String?
+  bankName               String
+  bankAccountNumber      String
+  bankAccountName        String
+  bpjsKesehatanEnrolled  Boolean    @default(true)
+  bpjsTkEnrolled         Boolean    @default(true)
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@map("employee_payroll_profiles")
+}
+
+model SalaryComponent {
+  id        String              @id @default(cuid())
+  code      String              @unique
+  name      String
+  kind      SalaryComponentKind
+  isTaxable Boolean             @default(true)
+  isActive  Boolean             @default(true)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  assignments EmployeeSalaryAssignment[]
+
+  @@map("salary_components")
+}
+
+model EmployeeSalaryAssignment {
+  id            String    @id @default(cuid())
+  employeeId    String
+  componentId   String
+  amountRupiah  BigInt
+  effectiveFrom DateTime  @db.Date
+  effectiveTo   DateTime? @db.Date
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  employee  Employee        @relation(fields: [employeeId], references: [id])
+  component SalaryComponent @relation(fields: [componentId], references: [id])
+
+  @@index([employeeId, effectiveFrom])
+  @@index([componentId])
+  @@map("employee_salary_assignments")
+}
+
+model StatutorySetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  payload   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("statutory_settings")
+}
+
+model PayrollRun {
+  id                String            @id @default(cuid())
+  periodType        PayrollPeriodType
+  periodStart       DateTime          @db.Date
+  periodEnd         DateTime          @db.Date
+  status            PayrollRunStatus  @default(PENDING)
+  triggeredByUserId String
+  errorMessage      String?
+  processedCount    Int               @default(0)
+  skippedCount      Int               @default(0)
+  skipReasons       Json?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  triggeredBy User            @relation(fields: [triggeredByUserId], references: [id])
+  payslips    Payslip[]
+  exports     PayrollExport[]
+
+  @@index([status])
+  @@index([periodStart, periodEnd])
+  @@map("payroll_runs")
+}
+
+model Payslip {
+  id              String   @id @default(cuid())
+  payrollRunId    String
+  employeeId      String
+  grossRupiah     BigInt
+  statutoryRupiah BigInt
+  netRupiah       BigInt
+  lines           Json
+  pdfObjectKey    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  run      PayrollRun @relation(fields: [payrollRunId], references: [id], onDelete: Cascade)
+  employee Employee   @relation(fields: [employeeId], references: [id])
+
+  @@unique([payrollRunId, employeeId])
+  @@index([employeeId])
+  @@map("payslips")
+}
+
+model PayrollExport {
+  id            String            @id @default(cuid())
+  payrollRunId  String
+  kind          PayrollExportKind
+  objectKey     String
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  run PayrollRun @relation(fields: [payrollRunId], references: [id], onDelete: Cascade)
+
+  @@index([payrollRunId, kind])
+  @@map("payroll_exports")
 }

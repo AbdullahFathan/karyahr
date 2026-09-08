@@ -14,6 +14,19 @@ export function isOvernightShift(shift: Shift): boolean {
 }
 
 /**
+ * Scheduled shift length in minutes (0 for flexible shifts).
+ */
+export function scheduledMinutes(shift: Shift): number {
+  if (shift.isFlexible) {
+    return 0;
+  }
+  if (isOvernightShift(shift)) {
+    return 24 * 60 - shift.startMinutes + shift.endMinutes;
+  }
+  return shift.endMinutes - shift.startMinutes;
+}
+
+/**
  * Computes the punch window for a shift on a Jakarta work date.
  */
 export function shiftWindow(shift: Shift, workDate: Date): ShiftWindow {
@@ -27,6 +40,32 @@ export function shiftWindow(shift: Shift, workDate: Date): ShiftWindow {
   const endDate = isOvernightShift(shift) ? addWorkDays(workDate, 1) : workDate;
   const end = jakartaWallToUtc(endDate, shift.endMinutes);
   return { start, end };
+}
+
+/**
+ * Check-out window extends past shift end by overtimeCapMinutes.
+ */
+export function checkOutWindow(shift: Shift, workDate: Date): ShiftWindow {
+  const window = shiftWindow(shift, workDate);
+  if (shift.isFlexible || shift.overtimeCapMinutes <= 0) {
+    return window;
+  }
+  return {
+    start: window.start,
+    end: new Date(window.end.getTime() + shift.overtimeCapMinutes * 60_000),
+  };
+}
+
+/**
+ * Overtime minutes beyond scheduled shift length (flexible shifts yield 0).
+ */
+export function overtimeMinutes(shift: Shift, worked: number): number {
+  const scheduled = scheduledMinutes(shift);
+  if (scheduled <= 0) {
+    return 0;
+  }
+  const cap = Math.max(0, shift.overtimeCapMinutes);
+  return Math.min(cap, Math.max(0, worked - scheduled));
 }
 
 /**

@@ -31,6 +31,7 @@ const envSchema = z.object({
     .default("false")
     .transform((value) => value === "true"),
   MAX_UPLOAD_BYTES: z.coerce.number().int().positive().default(10 * 1024 * 1024),
+  COMPANY_NAME: z.string().min(1).default("KaryaHR"),
   SEED_ADMIN_EMAIL: z.preprocess(
     (value) => (value === "" ? undefined : value),
     z.email().optional(),

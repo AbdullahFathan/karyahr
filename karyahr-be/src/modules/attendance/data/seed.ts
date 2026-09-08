@@ -8,6 +8,7 @@ const SHIFTS = [
     endMinutes: 17 * 60,
     graceMinutesLate: 15,
     graceMinutesEarly: 0,
+    overtimeCapMinutes: 180,
     isFlexible: false,
   },
   {
@@ -53,10 +54,15 @@ export async function seedAttendance(prisma: PrismaClient): Promise<void> {
           endMinutes: shift.endMinutes,
           graceMinutesLate: shift.graceMinutesLate,
           graceMinutesEarly: shift.graceMinutesEarly,
+          overtimeCapMinutes: "overtimeCapMinutes" in shift ? shift.overtimeCapMinutes : 0,
           isFlexible: shift.isFlexible,
           isActive: true,
         },
-        create: { ...shift, isActive: true },
+        create: {
+          ...shift,
+          overtimeCapMinutes: "overtimeCapMinutes" in shift ? shift.overtimeCapMinutes : 0,
+          isActive: true,
+        },
       }),
     ),
   );
