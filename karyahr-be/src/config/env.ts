@@ -15,6 +15,16 @@ const envSchema = z.object({
   SMTP_PASS: z.string().optional(),
   SMTP_FROM: z.string().optional(),
   JWT_SECRET: z.string().min(32),
+  ENCRYPTION_KEY: z
+    .string()
+    .min(1)
+    .refine((value) => {
+      try {
+        return Buffer.from(value, "base64").length === 32;
+      } catch {
+        return false;
+      }
+    }, "ENCRYPTION_KEY must be 32-byte base64"),
   JWT_ACCESS_TTL_SECONDS: z.coerce.number().int().positive().default(900),
   JWT_REFRESH_TTL_SECONDS: z.coerce.number().int().positive().default(604800),
   COOKIE_SECURE: z

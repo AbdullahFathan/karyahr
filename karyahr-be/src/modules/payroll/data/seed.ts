@@ -1,5 +1,11 @@
 import type { Prisma, PrismaClient } from "../../../../prisma/generated/prisma/client";
+import { createAesGcmCipherFromEnv } from "../../../shared/crypto/aes-gcm";
 import { DEFAULT_STATUTORY_RATES, statutoryRatesToJson } from "../domain/statutory/rates";
+import {
+  encryptOptionalUtf8Field,
+  encryptRupiah,
+  encryptUtf8Field,
+} from "./payroll-field-crypto";
 
 const COMPONENTS = [
   { code: "BASIC", name: "Gaji pokok", kind: "BASIC" as const, isTaxable: true },
@@ -12,6 +18,8 @@ const COMPONENTS = [
  * Seeds statutory rates, salary components, and a sample profile for EMP-0001.
  */
 export async function seedPayroll(prisma: PrismaClient): Promise<void> {
+  const cipher = createAesGcmCipherFromEnv();
+
   await prisma.statutorySetting.upsert({
     where: { key: "default" },
     update: { payload: statutoryRatesToJson(DEFAULT_STATUTORY_RATES) as Prisma.InputJsonValue },
@@ -42,14 +50,17 @@ export async function seedPayroll(prisma: PrismaClient): Promise<void> {
 
   await prisma.employeePayrollProfile.upsert({
     where: { employeeId: admin.id },
-    update: {},
+    update: {
+      npwp: encryptOptionalUtf8Field(cipher, "10.0.0.1-000.000"),
+      bankAccountNumber: encryptUtf8Field(cipher, "1234567890"),
+    },
     create: {
       employeeId: admin.id,
       ptkpStatus: "TK_0",
       taxMethod: "GROSS",
-      npwp: "10.0.0.1-000.000",
+      npwp: encryptOptionalUtf8Field(cipher, "10.0.0.1-000.000"),
       bankName: "BCA",
-      bankAccountNumber: "1234567890",
+      bankAccountNumber: encryptUtf8Field(cipher, "1234567890"),
       bankAccountName: "HR Administrator",
       bpjsKesehatanEnrolled: true,
       bpjsTkEnrolled: true,
@@ -64,7 +75,7 @@ export async function seedPayroll(prisma: PrismaClient): Promise<void> {
       data: {
         employeeId: admin.id,
         componentId: basic.id,
-        amountRupiah: 8_000_000n,
+        amountRupiah: encryptRupiah(cipher, 8_000_000n),
         effectiveFrom: new Date("2020-01-01"),
       },
     });
@@ -77,7 +88,7 @@ export async function seedPayroll(prisma: PrismaClient): Promise<void> {
       data: {
         employeeId: admin.id,
         componentId: jabatan.id,
-        amountRupiah: 1_000_000n,
+        amountRupiah: encryptRupiah(cipher, 1_000_000n),
         effectiveFrom: new Date("2020-01-01"),
       },
     });

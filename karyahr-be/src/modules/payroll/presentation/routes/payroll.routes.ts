@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { PrismaAuditLogRepository } from "../../../../shared/audit/PrismaAuditLogRepository";
 import { PERMISSIONS } from "../../../../shared/auth/permissions";
+import { createAesGcmCipherFromEnv } from "../../../../shared/crypto/aes-gcm";
 import { getPrisma } from "../../../../shared/database/prisma";
 import { requireAuth } from "../../../../shared/middleware/require-auth";
 import { requirePermission } from "../../../../shared/middleware/require-permission";
-import { MinioObjectStorage } from "../../../../shared/storage/MinioObjectStorage";
+import { createObjectStorage } from "../../../../shared/storage/createObjectStorage";
 import { PrismaEmployeeRepository } from "../../../employees/data/PrismaEmployeeRepository";
 import { QueuePayrollJobs } from "../../data/QueuePayrollJobs";
 import {
@@ -45,15 +46,16 @@ import {
  */
 export function createPayrollRouter(): Router {
   const prisma = getPrisma();
+  const cipher = createAesGcmCipherFromEnv();
   const audit = new PrismaAuditLogRepository(prisma);
   const employees = new PrismaEmployeeRepository(prisma);
   const components = new PrismaSalaryComponentRepository(prisma);
-  const profiles = new PrismaEmployeePayrollProfileRepository(prisma);
-  const assignments = new PrismaEmployeeSalaryAssignmentRepository(prisma);
+  const profiles = new PrismaEmployeePayrollProfileRepository(prisma, cipher);
+  const assignments = new PrismaEmployeeSalaryAssignmentRepository(prisma, cipher);
   const runs = new PrismaPayrollRunRepository(prisma);
-  const payslips = new PrismaPayslipRepository(prisma);
+  const payslips = new PrismaPayslipRepository(prisma, cipher);
   const exports = new PrismaPayrollExportRepository(prisma);
-  const storage = new MinioObjectStorage();
+  const storage = createObjectStorage();
   const jobs = new QueuePayrollJobs();
 
   const controller = createPayrollController({

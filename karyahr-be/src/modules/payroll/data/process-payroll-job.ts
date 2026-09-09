@@ -1,8 +1,9 @@
 import type { Job } from "bullmq";
 import { env } from "../../../config/env";
 import { PrismaAuditLogRepository } from "../../../shared/audit/PrismaAuditLogRepository";
+import { createAesGcmCipherFromEnv } from "../../../shared/crypto/aes-gcm";
 import { getPrisma } from "../../../shared/database/prisma";
-import { MinioObjectStorage } from "../../../shared/storage/MinioObjectStorage";
+import { createObjectStorage } from "../../../shared/storage/createObjectStorage";
 import { PrismaEmployeeRepository } from "../../employees/data/PrismaEmployeeRepository";
 import { QueueNotificationDispatcher } from "../../notifications/data/QueueNotificationDispatcher";
 import { PrismaAttendanceHoursLookup, PrismaApprovedLeaveDaysLookup } from "./PrismaPayrollLookups";
@@ -28,6 +29,7 @@ function asRecord(data: unknown): Record<string, unknown> {
  */
 export async function processPayrollJob(job: Job): Promise<void> {
   const prisma = getPrisma();
+  const cipher = createAesGcmCipherFromEnv();
   const payload = asRecord(job.data);
   if (job.name === "payroll.run") {
     const payrollRunId = payload.payrollRunId;
@@ -36,8 +38,8 @@ export async function processPayrollJob(job: Job): Promise<void> {
     }
     const useCase = new ProcessPayrollRunUseCase(
       new PrismaPayrollRunRepository(prisma),
-      new PrismaPayslipRepository(prisma),
-      new PrismaPayrollEmployeeSource(prisma),
+      new PrismaPayslipRepository(prisma, cipher),
+      new PrismaPayrollEmployeeSource(prisma, cipher),
       new PrismaAttendanceHoursLookup(prisma),
       new PrismaApprovedLeaveDaysLookup(prisma),
       new PrismaStatutorySettingRepository(prisma),
@@ -54,10 +56,10 @@ export async function processPayrollJob(job: Job): Promise<void> {
       throw new Error("payroll.payslip_pdf requires payslipId");
     }
     const useCase = new GeneratePayslipPdfUseCase(
-      new PrismaPayslipRepository(prisma),
+      new PrismaPayslipRepository(prisma, cipher),
       new PrismaPayrollRunRepository(prisma),
       new PrismaEmployeeRepository(prisma),
-      new MinioObjectStorage(),
+      createObjectStorage(),
       env().COMPANY_NAME,
     );
     await useCase.execute(payslipId);

@@ -5,7 +5,7 @@ import { PrismaAuditLogRepository } from "../../../../shared/audit/PrismaAuditLo
 import { getPrisma } from "../../../../shared/database/prisma";
 import { requireAuth } from "../../../../shared/middleware/require-auth";
 import { requirePermission } from "../../../../shared/middleware/require-permission";
-import { MinioObjectStorage } from "../../../../shared/storage/MinioObjectStorage";
+import { createObjectStorage } from "../../../../shared/storage/createObjectStorage";
 import { PrismaUserRepository } from "../../../auth/data/PrismaUserRepository";
 import { PrismaRefreshTokenRepository } from "../../../auth/data/PrismaRefreshTokenRepository";
 import { PERMISSIONS } from "../../../../shared/auth/permissions";
@@ -52,7 +52,7 @@ export function createEmployeeRouter(): Router {
   const users = new PrismaUserRepository(prisma);
   const refreshTokens = new PrismaRefreshTokenRepository(prisma);
   const audit = new PrismaAuditLogRepository(prisma);
-  const storage = new MinioObjectStorage();
+  const storage = createObjectStorage();
   const maxBytes = env().MAX_UPLOAD_BYTES;
   const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: maxBytes } });
 

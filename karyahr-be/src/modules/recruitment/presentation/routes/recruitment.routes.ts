@@ -6,7 +6,7 @@ import { PERMISSIONS } from "../../../../shared/auth/permissions";
 import { getPrisma } from "../../../../shared/database/prisma";
 import { requireAuth } from "../../../../shared/middleware/require-auth";
 import { requirePermission } from "../../../../shared/middleware/require-permission";
-import { MinioObjectStorage } from "../../../../shared/storage/MinioObjectStorage";
+import { createObjectStorage } from "../../../../shared/storage/createObjectStorage";
 import { PrismaUserRepository } from "../../../auth/data/PrismaUserRepository";
 import { PrismaEmployeeRepository } from "../../../employees/data/PrismaEmployeeRepository";
 import { CreateEmployeeUseCase } from "../../../employees/domain/usecases/EmployeeCrud.usecase";
@@ -71,7 +71,7 @@ export function createRecruitmentRouter(): Router {
   const processes = new PrismaOnboardingProcessRepository(prisma);
   const employees = new PrismaEmployeeRepository(prisma);
   const users = new PrismaUserRepository(prisma);
-  const storage = new MinioObjectStorage();
+  const storage = createObjectStorage();
   const dispatcher = new QueueNotificationDispatcher();
   const maxBytes = env().MAX_UPLOAD_BYTES;
   const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: maxBytes } });

@@ -1,4 +1,5 @@
 import type { Prisma, PrismaClient } from "../../../../prisma/generated/prisma/client";
+import type { AesGcmCipher } from "../../../shared/crypto/aes-gcm";
 import type {
   EmployeePayrollProfile,
   EmployeeSalaryAssignment,
@@ -8,11 +9,8 @@ import type {
   PayrollRun,
   PayrollRunSkip,
   Payslip,
-  PayslipLine,
-  PayslipLineKind,
   SalaryComponent,
 } from "../domain/entities/Payroll";
-import { PAYSLIP_LINE_KINDS } from "../domain/entities/Payroll";
 import type {
   CreatePayrollRunInput,
   IEmployeePayrollProfileRepository,
@@ -26,6 +24,16 @@ import type {
 } from "../domain/repositories/IPayrollRepository";
 import { DEFAULT_STATUTORY_RATES, parseStatutoryRates } from "../domain/statutory/rates";
 import type { StatutoryRates } from "../domain/statutory/rates";
+import {
+  decryptOptionalUtf8Field,
+  decryptPayslipLines,
+  decryptRupiah,
+  decryptUtf8Field,
+  encryptOptionalUtf8Field,
+  encryptPayslipLines,
+  encryptRupiah,
+  encryptUtf8Field,
+} from "./payroll-field-crypto";
 
 function toComponent(row: {
   id: string;
@@ -45,45 +53,51 @@ function toComponent(row: {
   };
 }
 
-function toProfile(row: {
-  id: string;
-  employeeId: string;
-  ptkpStatus: EmployeePayrollProfile["ptkpStatus"];
-  taxMethod: EmployeePayrollProfile["taxMethod"];
-  npwp: string | null;
-  bankName: string;
-  bankAccountNumber: string;
-  bankAccountName: string;
-  bpjsKesehatanEnrolled: boolean;
-  bpjsTkEnrolled: boolean;
-}): EmployeePayrollProfile {
+function toProfile(
+  row: {
+    id: string;
+    employeeId: string;
+    ptkpStatus: EmployeePayrollProfile["ptkpStatus"];
+    taxMethod: EmployeePayrollProfile["taxMethod"];
+    npwp: string | null;
+    bankName: string;
+    bankAccountNumber: string;
+    bankAccountName: string;
+    bpjsKesehatanEnrolled: boolean;
+    bpjsTkEnrolled: boolean;
+  },
+  cipher: AesGcmCipher,
+): EmployeePayrollProfile {
   return {
     id: row.id,
     employeeId: row.employeeId,
     ptkpStatus: row.ptkpStatus,
     taxMethod: row.taxMethod,
-    npwp: row.npwp,
+    npwp: decryptOptionalUtf8Field(cipher, row.npwp),
     bankName: row.bankName,
-    bankAccountNumber: row.bankAccountNumber,
+    bankAccountNumber: decryptUtf8Field(cipher, row.bankAccountNumber),
     bankAccountName: row.bankAccountName,
     bpjsKesehatanEnrolled: row.bpjsKesehatanEnrolled,
     bpjsTkEnrolled: row.bpjsTkEnrolled,
   };
 }
 
-function toAssignment(row: {
-  id: string;
-  employeeId: string;
-  componentId: string;
-  amountRupiah: bigint;
-  effectiveFrom: Date;
-  effectiveTo: Date | null;
-}): EmployeeSalaryAssignment {
+function toAssignment(
+  row: {
+    id: string;
+    employeeId: string;
+    componentId: string;
+    amountRupiah: string;
+    effectiveFrom: Date;
+    effectiveTo: Date | null;
+  },
+  cipher: AesGcmCipher,
+): EmployeeSalaryAssignment {
   return {
     id: row.id,
     employeeId: row.employeeId,
     componentId: row.componentId,
-    amountRupiah: row.amountRupiah,
+    amountRupiah: decryptRupiah(cipher, row.amountRupiah),
     effectiveFrom: row.effectiveFrom,
     effectiveTo: row.effectiveTo,
   };
@@ -131,63 +145,27 @@ function toRun(row: {
   };
 }
 
-function parseLines(value: Prisma.JsonValue): readonly PayslipLine[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-  return value.flatMap((item) => {
-    if (!item || typeof item !== "object" || Array.isArray(item)) {
-      return [];
-    }
-    const record = item as Record<string, unknown>;
-    const kind = record.kind;
-    if (
-      typeof record.code !== "string" ||
-      typeof record.name !== "string" ||
-      typeof kind !== "string" ||
-      !(PAYSLIP_LINE_KINDS as readonly string[]).includes(kind) ||
-      (typeof record.amountRupiah !== "string" && typeof record.amountRupiah !== "number")
-    ) {
-      return [];
-    }
-    return [
-      {
-        code: record.code,
-        name: record.name,
-        kind: kind as PayslipLineKind,
-        amountRupiah: BigInt(record.amountRupiah),
-      },
-    ];
-  });
-}
-
-function linesToJson(lines: readonly PayslipLine[]): Prisma.InputJsonValue {
-  return lines.map((line) => ({
-    code: line.code,
-    name: line.name,
-    kind: line.kind,
-    amountRupiah: line.amountRupiah.toString(),
-  }));
-}
-
-function toPayslip(row: {
-  id: string;
-  payrollRunId: string;
-  employeeId: string;
-  grossRupiah: bigint;
-  statutoryRupiah: bigint;
-  netRupiah: bigint;
-  lines: Prisma.JsonValue;
-  pdfObjectKey: string | null;
-}): Payslip {
+function toPayslip(
+  row: {
+    id: string;
+    payrollRunId: string;
+    employeeId: string;
+    grossRupiah: string;
+    statutoryRupiah: string;
+    netRupiah: string;
+    lines: string;
+    pdfObjectKey: string | null;
+  },
+  cipher: AesGcmCipher,
+): Payslip {
   return {
     id: row.id,
     payrollRunId: row.payrollRunId,
     employeeId: row.employeeId,
-    grossRupiah: row.grossRupiah,
-    statutoryRupiah: row.statutoryRupiah,
-    netRupiah: row.netRupiah,
-    lines: parseLines(row.lines),
+    grossRupiah: decryptRupiah(cipher, row.grossRupiah),
+    statutoryRupiah: decryptRupiah(cipher, row.statutoryRupiah),
+    netRupiah: decryptRupiah(cipher, row.netRupiah),
+    lines: decryptPayslipLines(cipher, row.lines),
     pdfObjectKey: row.pdfObjectKey,
   };
 }
@@ -229,29 +207,44 @@ export class PrismaSalaryComponentRepository implements ISalaryComponentReposito
  * Employee payroll profile persistence.
  */
 export class PrismaEmployeePayrollProfileRepository implements IEmployeePayrollProfileRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly cipher: AesGcmCipher,
+  ) {}
 
   async upsert(input: Omit<EmployeePayrollProfile, "id">): Promise<EmployeePayrollProfile> {
+    const npwp = encryptOptionalUtf8Field(this.cipher, input.npwp);
+    const bankAccountNumber = encryptUtf8Field(this.cipher, input.bankAccountNumber);
     const row = await this.prisma.employeePayrollProfile.upsert({
       where: { employeeId: input.employeeId },
-      create: input,
+      create: {
+        employeeId: input.employeeId,
+        ptkpStatus: input.ptkpStatus,
+        taxMethod: input.taxMethod,
+        npwp,
+        bankName: input.bankName,
+        bankAccountNumber,
+        bankAccountName: input.bankAccountName,
+        bpjsKesehatanEnrolled: input.bpjsKesehatanEnrolled,
+        bpjsTkEnrolled: input.bpjsTkEnrolled,
+      },
       update: {
         ptkpStatus: input.ptkpStatus,
         taxMethod: input.taxMethod,
-        npwp: input.npwp,
+        npwp,
         bankName: input.bankName,
-        bankAccountNumber: input.bankAccountNumber,
+        bankAccountNumber,
         bankAccountName: input.bankAccountName,
         bpjsKesehatanEnrolled: input.bpjsKesehatanEnrolled,
         bpjsTkEnrolled: input.bpjsTkEnrolled,
       },
     });
-    return toProfile(row);
+    return toProfile(row, this.cipher);
   }
 
   async findByEmployeeId(employeeId: string): Promise<EmployeePayrollProfile | null> {
     const row = await this.prisma.employeePayrollProfile.findUnique({ where: { employeeId } });
-    return row ? toProfile(row) : null;
+    return row ? toProfile(row, this.cipher) : null;
   }
 }
 
@@ -259,10 +252,24 @@ export class PrismaEmployeePayrollProfileRepository implements IEmployeePayrollP
  * Employee salary assignment persistence.
  */
 export class PrismaEmployeeSalaryAssignmentRepository implements IEmployeeSalaryAssignmentRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly cipher: AesGcmCipher,
+  ) {}
 
   async create(input: Omit<EmployeeSalaryAssignment, "id">): Promise<EmployeeSalaryAssignment> {
-    return toAssignment(await this.prisma.employeeSalaryAssignment.create({ data: input }));
+    return toAssignment(
+      await this.prisma.employeeSalaryAssignment.create({
+        data: {
+          employeeId: input.employeeId,
+          componentId: input.componentId,
+          amountRupiah: encryptRupiah(this.cipher, input.amountRupiah),
+          effectiveFrom: input.effectiveFrom,
+          effectiveTo: input.effectiveTo,
+        },
+      }),
+      this.cipher,
+    );
   }
 
   async listByEmployee(employeeId: string): Promise<readonly EmployeeSalaryAssignment[]> {
@@ -270,7 +277,7 @@ export class PrismaEmployeeSalaryAssignmentRepository implements IEmployeeSalary
       where: { employeeId },
       orderBy: { effectiveFrom: "desc" },
     });
-    return rows.map(toAssignment);
+    return rows.map((row) => toAssignment(row, this.cipher));
   }
 }
 
@@ -350,7 +357,10 @@ export class PrismaPayrollRunRepository implements IPayrollRunRepository {
  * Payslip persistence.
  */
 export class PrismaPayslipRepository implements IPayslipRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly cipher: AesGcmCipher,
+  ) {}
 
   async create(input: Omit<Payslip, "id">): Promise<Payslip> {
     return toPayslip(
@@ -358,26 +368,27 @@ export class PrismaPayslipRepository implements IPayslipRepository {
         data: {
           payrollRunId: input.payrollRunId,
           employeeId: input.employeeId,
-          grossRupiah: input.grossRupiah,
-          statutoryRupiah: input.statutoryRupiah,
-          netRupiah: input.netRupiah,
-          lines: linesToJson(input.lines),
+          grossRupiah: encryptRupiah(this.cipher, input.grossRupiah),
+          statutoryRupiah: encryptRupiah(this.cipher, input.statutoryRupiah),
+          netRupiah: encryptRupiah(this.cipher, input.netRupiah),
+          lines: encryptPayslipLines(this.cipher, input.lines),
           pdfObjectKey: input.pdfObjectKey,
         },
       }),
+      this.cipher,
     );
   }
 
   async findById(id: string): Promise<Payslip | null> {
     const row = await this.prisma.payslip.findUnique({ where: { id } });
-    return row ? toPayslip(row) : null;
+    return row ? toPayslip(row, this.cipher) : null;
   }
 
   async findByRunAndEmployee(payrollRunId: string, employeeId: string): Promise<Payslip | null> {
     const row = await this.prisma.payslip.findUnique({
       where: { payrollRunId_employeeId: { payrollRunId, employeeId } },
     });
-    return row ? toPayslip(row) : null;
+    return row ? toPayslip(row, this.cipher) : null;
   }
 
   async listByRun(payrollRunId: string): Promise<readonly Payslip[]> {
@@ -385,7 +396,7 @@ export class PrismaPayslipRepository implements IPayslipRepository {
       where: { payrollRunId },
       orderBy: { employeeId: "asc" },
     });
-    return rows.map(toPayslip);
+    return rows.map((row) => toPayslip(row, this.cipher));
   }
 
   async listByEmployee(employeeId: string, from?: Date, to?: Date): Promise<readonly Payslip[]> {
@@ -402,7 +413,7 @@ export class PrismaPayslipRepository implements IPayslipRepository {
       },
       orderBy: { createdAt: "desc" },
     });
-    return rows.map(toPayslip);
+    return rows.map((row) => toPayslip(row, this.cipher));
   }
 
   async listByYear(year: number): Promise<readonly Payslip[]> {
@@ -417,12 +428,13 @@ export class PrismaPayslipRepository implements IPayslipRepository {
         },
       },
     });
-    return rows.map(toPayslip);
+    return rows.map((row) => toPayslip(row, this.cipher));
   }
 
   async setPdfObjectKey(id: string, objectKey: string): Promise<Payslip> {
     return toPayslip(
       await this.prisma.payslip.update({ where: { id }, data: { pdfObjectKey: objectKey } }),
+      this.cipher,
     );
   }
 }
@@ -471,7 +483,10 @@ function assignmentOverlaps(from: Date, to: Date) {
  * Loads employees eligible for a payroll period.
  */
 export class PrismaPayrollEmployeeSource implements IPayrollEmployeeSource {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly cipher: AesGcmCipher,
+  ) {}
 
   async listEligible(periodStart: Date, periodEnd: Date): Promise<readonly PayrollEmployeeSnapshot[]> {
     const rows = await this.prisma.employee.findMany({
@@ -508,10 +523,10 @@ export class PrismaPayrollEmployeeSource implements IPayrollEmployeeSource {
           userId: row.user?.id ?? null,
           fullName: row.fullName,
           employeeNumber: row.employeeNumber,
-          profile: toProfile(row.payrollProfile),
+          profile: toProfile(row.payrollProfile, this.cipher),
           assignments: [...latestByComponent.values()].map((assignment) => ({
             component: toComponent(assignment.component),
-            amountRupiah: assignment.amountRupiah,
+            amountRupiah: decryptRupiah(this.cipher, assignment.amountRupiah),
           })),
         },
       ];

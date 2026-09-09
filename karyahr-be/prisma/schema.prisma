@@ -677,7 +677,7 @@ model EmployeeSalaryAssignment {
   id            String    @id @default(cuid())
   employeeId    String
   componentId   String
-  amountRupiah  BigInt
+  amountRupiah  String
   effectiveFrom DateTime  @db.Date
   effectiveTo   DateTime? @db.Date
   createdAt     DateTime  @default(now())
@@ -728,10 +728,10 @@ model Payslip {
   id              String   @id @default(cuid())
   payrollRunId    String
   employeeId      String
-  grossRupiah     BigInt
-  statutoryRupiah BigInt
-  netRupiah       BigInt
-  lines           Json
+  grossRupiah     String
+  statutoryRupiah String
+  netRupiah       String
+  lines           String
   pdfObjectKey    String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

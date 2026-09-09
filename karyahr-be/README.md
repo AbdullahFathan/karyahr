@@ -1,15 +1,26 @@
 # karyahr-be
 
-To install dependencies:
+Backend for KaryaHR (Bun + Express + Prisma).
+
+## Setup
 
 ```bash
 bun install
+cp .env.example .env.local
+# Fill DATABASE_URL, REDIS_URL, JWT_SECRET, ENCRYPTION_KEY (32-byte base64), MinIO, etc.
+bun run prisma:migrate
+bun run prisma:seed
+bun run dev
 ```
 
-To run:
+`ENCRYPTION_KEY` is required (AES-256-GCM). Salary amounts, payroll PII, and MinIO object bodies are encrypted at rest. Legacy plaintext rows/objects dual-read until rewritten (re-seed or re-save to overwrite).
 
-```bash
-bun run index.ts
-```
+## Scripts
 
-This project was created using `bun init` in bun v1.4.0. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
+| Script | Purpose |
+|---|---|
+| `bun run dev` | API with watch |
+| `bun run worker` | BullMQ workers |
+| `bun test` | Unit tests |
+| `bun run prisma:migrate` | Apply migrations |
+| `bun run prisma:seed` | Seed data |

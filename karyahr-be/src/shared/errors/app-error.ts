@@ -63,6 +63,16 @@ export class ForbiddenError extends AppError {
   }
 }
 
+/**
+ * At-rest encryption or decryption failed.
+ */
+export class EncryptionError extends AppError {
+  constructor(message = "Encryption failed") {
+    super(message, 500, "ENCRYPTION_ERROR");
+    this.name = "EncryptionError";
+  }
+}
+
 export type ErrorBody = {
   readonly error: string;
   readonly message: string;
