@@ -44,6 +44,19 @@ const envSchema = z.object({
 
 export type AppEnv = z.infer<typeof envSchema>;
 
+function assertProductionGuards(data: AppEnv): void {
+  if (data.NODE_ENV !== "production") {
+    return;
+  }
+  if (!data.COOKIE_SECURE) {
+    throw new Error("Invalid environment: COOKIE_SECURE must be true in production");
+  }
+  const origins = corsOrigins(data.CORS_ORIGIN);
+  if (origins.length === 0 || origins.includes("*")) {
+    throw new Error("Invalid environment: CORS_ORIGIN must be an explicit allowlist in production");
+  }
+}
+
 /**
  * Parses and validates process environment. Throws on invalid config.
  */
@@ -55,6 +68,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): AppEnv {
       .join("; ");
     throw new Error(`Invalid environment: ${details}`);
   }
+  assertProductionGuards(parsed.data);
   return parsed.data;
 }
 

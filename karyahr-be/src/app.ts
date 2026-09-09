@@ -39,6 +39,7 @@ export function createApp(): Express {
       limit: 100,
       standardHeaders: "draft-8",
       legacyHeaders: false,
+      skip: (req) => req.path === "/health" || req.path === "/ready",
     }),
   );
   app.use(express.json());
