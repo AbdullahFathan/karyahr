@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { ConflictError, ValidationError } from "../../../../shared/errors/app-error";
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "../../../../shared/errors/app-error";
 import type { IAuditLogRepository } from "../../../../shared/audit/IAuditLogRepository";
 import { PERMISSIONS } from "../../../../shared/auth/permissions";
 import type { AuthUser } from "../../../auth/domain/entities/AuthUser";
@@ -23,10 +23,10 @@ import type {
   IReviewRepository,
   UpdateCycleInput,
 } from "../repositories/IPerformanceRepository";
-import { OpenCycleUseCase } from "./Cycle.usecase";
+import { OpenCycleUseCase, CreateCycleUseCase, UpdateCycleUseCase, LockCycleUseCase, ListCyclesUseCase, GetCycleUseCase } from "./Cycle.usecase";
 import type { PerformanceActor } from "./Goal.usecase";
 import { GetDepartmentHeatmapUseCase, GetTeamDistributionUseCase } from "./PerformanceDashboard.usecase";
-import { AssignPeersUseCase, CompleteReviewUseCase, SubmitRatingUseCase } from "./Review.usecase";
+import { AssignPeersUseCase, CompleteReviewUseCase, GetReviewUseCase, ListEmployeeReviewsUseCase, ListMyReviewsUseCase, SubmitRatingUseCase } from "./Review.usecase";
 
 const employee: Employee = {
   id: "e1",
@@ -431,5 +431,78 @@ describe("cycle open and dashboard", () => {
     );
     expect(heatmap.cells[0]?.departmentId).toBe("d1");
     expect(heatmap.cells[0]?.averageScore).toBe(4);
+  });
+
+  test("creates, updates, locks, and lists cycles", async () => {
+    const cycles = new MemoryCycles({ ...cycle, status: "DRAFT" });
+    const created = await new CreateCycleUseCase(cycles, new MemoryAudit()).execute(
+      actor("hr", [PERMISSIONS.PERFORMANCE_CYCLES_WRITE]),
+      {
+        name: "Q2",
+        periodType: "QUARTERLY",
+        startsAt: new Date("2026-04-01"),
+        endsAt: new Date("2026-06-30"),
+      },
+    );
+    expect(created.name).toBe("Q2");
+    await expect(
+      new CreateCycleUseCase(cycles, new MemoryAudit()).execute(actor("hr", []), {
+        name: "bad",
+        periodType: "QUARTERLY",
+        startsAt: new Date("2026-06-30"),
+        endsAt: new Date("2026-04-01"),
+      }),
+    ).rejects.toBeInstanceOf(ValidationError);
+    const updated = await new UpdateCycleUseCase(cycles, new MemoryAudit()).execute(
+      actor("hr", []),
+      "c1",
+      { name: "Q2 updated" },
+    );
+    expect(updated.name).toBe("Q2 updated");
+    await new OpenCycleUseCase(
+      cycles,
+      new MemoryReviews(),
+      new MemoryEmployees([employee]),
+      new MemoryUsers([employeeUser]),
+      new MemoryDispatcher(),
+      new MemoryAudit(),
+    ).execute(actor("hr", [PERMISSIONS.PERFORMANCE_CYCLES_WRITE]), "c1");
+    const locked = await new LockCycleUseCase(cycles, new MemoryAudit()).execute(actor("hr", []), "c1");
+    expect(locked.status).toBe("LOCKED");
+    await expect(new UpdateCycleUseCase(cycles, new MemoryAudit()).execute(actor("hr", []), "c1", { name: "x" })).rejects.toBeInstanceOf(
+      ValidationError,
+    );
+    expect(await new ListCyclesUseCase(cycles).execute()).toHaveLength(1);
+    expect((await new GetCycleUseCase(cycles).execute("c1")).id).toBe("c1");
+    await expect(new GetCycleUseCase(cycles).execute("missing")).rejects.toBeInstanceOf(NotFoundError);
+  });
+});
+
+describe("review queries", () => {
+  test("loads and lists reviews for the subject", async () => {
+    const reviews = new MemoryReviews();
+    reviews.seed({
+      id: "r1",
+      cycleId: "c1",
+      employeeId: "e1",
+      status: "PENDING",
+      finalScore: null,
+      recommendation: null,
+      peers: [],
+      ratings: [],
+    });
+    expect((await new GetReviewUseCase(reviews, new MemoryEmployees([employee])).execute(actor("e1", []), "r1")).id).toBe(
+      "r1",
+    );
+    expect(await new ListMyReviewsUseCase(reviews).execute(actor("e1", []))).toHaveLength(1);
+    expect(
+      await new ListEmployeeReviewsUseCase(reviews, new MemoryEmployees([employee])).execute(
+        actor("hr", [PERMISSIONS.PERFORMANCE_CYCLES_WRITE]),
+        "e1",
+      ),
+    ).toHaveLength(1);
+    await expect(
+      new GetReviewUseCase(reviews, new MemoryEmployees([employee])).execute(actor("p1", []), "r1"),
+    ).rejects.toBeInstanceOf(ForbiddenError);
   });
 });

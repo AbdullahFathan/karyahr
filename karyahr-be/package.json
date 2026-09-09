@@ -9,6 +9,7 @@
     "worker": "bun --env-file=.env.local src/worker.ts",
     "worker:dev": "bun --watch --env-file=.env.local src/worker.ts",
     "test": "bun test",
+    "test:coverage": "bun test --coverage && bun scripts/assert-usecase-coverage.ts",
     "prisma": "bun --bun --env-file=.env.local x prisma",
     "prisma:migrate": "bun --bun --env-file=.env.local x prisma migrate dev",
     "prisma:generate": "bun --bun --env-file=.env.local x prisma generate",

@@ -4,6 +4,7 @@ import type { AuthUser } from "../entities/AuthUser";
 import type { IPasswordHasher, IAccessTokenSigner, IRefreshTokenIssuer } from "../ports/AuthPorts";
 import type { IRefreshTokenRepository, RefreshTokenRecord } from "../repositories/IRefreshTokenRepository";
 import type { IUserRepository } from "../repositories/IUserRepository";
+import { GetMeUseCase } from "./GetMe.usecase";
 import { LoginUseCase } from "./Login.usecase";
 import { LogoutUseCase } from "./Logout.usecase";
 import { RefreshSessionUseCase } from "./RefreshSession.usecase";
@@ -159,5 +160,40 @@ describe("LogoutUseCase", () => {
     });
     await new LogoutUseCase(store, refreshIssuer).execute("raw-refresh");
     expect(await store.findActiveByHash("hash-refresh")).toBeNull();
+  });
+});
+
+describe("GetMeUseCase", () => {
+  test("returns the authenticated profile", async () => {
+    const result = await new GetMeUseCase(new MemoryUsers(user), {
+      getSummary: async () => ({
+        id: "e1",
+        fullName: "Admin",
+        employeeNumber: "EMP-1",
+        status: "ACTIVE",
+      }),
+    }).execute("u1");
+    expect(result.user.email).toBe(user.email);
+    expect(result.employee.fullName).toBe("Admin");
+    expect(result.roles).toEqual(["hr_admin"]);
+  });
+
+  test("rejects a missing user", async () => {
+    await expect(
+      new GetMeUseCase(new MemoryUsers(null), {
+        getSummary: async () => ({
+          id: "e1",
+          fullName: "Admin",
+          employeeNumber: "EMP-1",
+          status: "ACTIVE",
+        }),
+      }).execute("missing"),
+    ).rejects.toBeInstanceOf(UnauthorizedError);
+  });
+
+  test("rejects when the employee summary is missing", async () => {
+    await expect(
+      new GetMeUseCase(new MemoryUsers(user), { getSummary: async () => null }).execute("u1"),
+    ).rejects.toBeInstanceOf(UnauthorizedError);
   });
 });

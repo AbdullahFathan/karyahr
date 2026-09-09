@@ -31,6 +31,9 @@ import { AccrueAnnualLeaveUseCase } from "./AccrueAnnualLeave.usecase";
 import {
   ApproveLeaveRequestUseCase,
   CreateLeaveRequestUseCase,
+  ListLeaveInboxUseCase,
+  ListMyLeaveBalancesUseCase,
+  ListMyLeaveRequestsUseCase,
   RejectLeaveRequestUseCase,
   type LeaveActor,
 } from "./LeaveRequest.usecase";
@@ -525,5 +528,34 @@ describe("AccrueAnnualLeaveUseCase", () => {
     expect(balances.rows[0]?.entitledDays).toBe(1);
     expect((await useCase.execute()).accrued).toBe(0);
     expect(balances.rows[0]?.entitledDays).toBe(1);
+  });
+});
+
+describe("leave list queries", () => {
+  test("lists my requests, balances, and manager inbox", async () => {
+    const { create, requests, balances } = harness();
+    await create.execute(employeeActor, {
+      leaveTypeId: annual.id,
+      startDate: jakartaDateToWorkDate(2026, 9, 21),
+      endDate: jakartaDateToWorkDate(2026, 9, 21),
+      reason: "one",
+    });
+    const mine = await new ListMyLeaveRequestsUseCase(requests).execute("e1", {
+      page: 1,
+      pageSize: 20,
+      skip: 0,
+      take: 20,
+    });
+    expect(mine.total).toBe(1);
+    const listedBalances = await new ListMyLeaveBalancesUseCase(
+      balances,
+      () => new Date("2026-09-08T01:00:00.000Z"),
+    ).execute("e1");
+    expect(listedBalances.length).toBeGreaterThan(0);
+    const inbox = await new ListLeaveInboxUseCase(requests).execute(
+      { userId: "u-m", employeeId: "m1", isHr: false },
+      { page: 1, pageSize: 20, skip: 0, take: 20 },
+    );
+    expect(inbox.total).toBe(1);
   });
 });

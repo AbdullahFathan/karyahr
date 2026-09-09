@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { ForbiddenError, NotFoundError } from "../../../../shared/errors/app-error";
 import type { InAppNotification } from "../entities/Notification";
 import type { INotificationRepository } from "../repositories/INotificationRepository";
+import { ListMyNotificationsUseCase } from "./ListMyNotifications.usecase";
 import { MarkNotificationReadUseCase } from "./MarkNotificationRead.usecase";
 
 class MemoryNotifications implements INotificationRepository {
@@ -54,5 +55,13 @@ describe("MarkNotificationReadUseCase", () => {
     expect(
       new MarkNotificationReadUseCase(new MemoryNotifications(sample)).execute("n-missing", "u1"),
     ).rejects.toBeInstanceOf(NotFoundError);
+  });
+});
+
+describe("ListMyNotificationsUseCase", () => {
+  test("lists notifications for the recipient", async () => {
+    const listed = await new ListMyNotificationsUseCase(new MemoryNotifications(sample)).execute("u1");
+    expect(listed).toHaveLength(1);
+    expect(listed[0]?.id).toBe("n1");
   });
 });

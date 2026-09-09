@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { ConflictError, ForbiddenError, ValidationError } from "../../../../shared/errors/app-error";
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "../../../../shared/errors/app-error";
 import type { IAuditLogRepository } from "../../../../shared/audit/IAuditLogRepository";
 import type { IObjectStorage, StoredObject } from "../../../../shared/storage/IObjectStorage";
 import type { AuthUser } from "../../../auth/domain/entities/AuthUser";
@@ -34,10 +34,24 @@ import type {
 import { ApplyToJobUseCase } from "./Apply.usecase";
 import { ConvertCandidateUseCase } from "./ConvertCandidate.usecase";
 import {
+  AddOnboardingTemplateItemUseCase,
   CompleteOnboardingTaskUseCase,
+  CreateOnboardingTemplateUseCase,
+  DeleteOnboardingTemplateItemUseCase,
+  GetOnboardingProcessUseCase,
+  ListOnboardingDashboardUseCase,
+  ListOnboardingTemplatesUseCase,
   StartOnboardingProcessUseCase,
+  UpdateOnboardingTemplateItemUseCase,
+  UpdateOnboardingTemplateUseCase,
 } from "./Onboarding.usecase";
-import { MoveApplicationStageUseCase } from "./Pipeline.usecase";
+import {
+  AddApplicationNoteUseCase,
+  GetApplicationUseCase,
+  ListApplicationsUseCase,
+  MoveApplicationStageUseCase,
+  RejectApplicationUseCase,
+} from "./Pipeline.usecase";
 import { PERMISSIONS } from "../../../../shared/auth/permissions";
 
 const posting: JobPostingDetail = {
@@ -293,8 +307,8 @@ class MemoryTemplates implements IOnboardingTemplateRepository {
   async update(): Promise<OnboardingTemplate> {
     return this.template!;
   }
-  async findById(): Promise<OnboardingTemplate | null> {
-    return this.template;
+  async findById(id: string): Promise<OnboardingTemplate | null> {
+    return this.template && this.template.id === id ? this.template : null;
   }
   async list() {
     return this.template ? [this.template] : [];
@@ -529,5 +543,107 @@ describe("CompleteOnboardingTaskUseCase", () => {
         permissionKeys: [PERMISSIONS.ONBOARDING_TASKS_COMPLETE],
       }),
     ).rejects.toBeInstanceOf(ForbiddenError);
+  });
+});
+
+describe("pipeline notes and reject", () => {
+  test("adds a note, lists applications, and rejects", async () => {
+    const jobs = new MemoryJobs({ ...posting });
+    const applications = new MemoryApplications();
+    await applications.create({ jobPostingId: "job1", candidateId: "c1", stageId: "s1" });
+    const note = await new AddApplicationNoteUseCase(applications, new MemoryNotes(), new MemoryAudit()).execute(
+      "a-1",
+      { body: "strong", rating: 5 },
+      "u-hr",
+    );
+    expect(note.rating).toBe(5);
+    expect((await new GetApplicationUseCase(applications).execute("a-1")).id).toBe("a-1");
+    expect(
+      (await new ListApplicationsUseCase(applications).execute("job1", { page: 1, pageSize: 20, skip: 0, take: 20 }))
+        .total,
+    ).toBe(1);
+    const rejected = await new RejectApplicationUseCase(
+      jobs,
+      applications,
+      new MemoryDispatcher(),
+      new MemoryAudit(),
+    ).execute("a-1", "u-hr");
+    expect(rejected.status).toBe("REJECTED");
+    await expect(
+      new RejectApplicationUseCase(jobs, applications, new MemoryDispatcher(), new MemoryAudit()).execute(
+        "a-1",
+        "u-hr",
+      ),
+    ).rejects.toBeInstanceOf(ConflictError);
+    await expect(new GetApplicationUseCase(applications).execute("missing")).rejects.toBeInstanceOf(NotFoundError);
+  });
+});
+
+describe("onboarding templates", () => {
+  test("creates template items and starts a process", async () => {
+    const template: OnboardingTemplate = {
+      id: "tmpl",
+      name: "Default",
+      positionId: "p1",
+      items: [
+        {
+          id: "i1",
+          templateId: "tmpl",
+          title: "Laptop",
+          description: "IT",
+          assigneeKind: "IT",
+          sortOrder: 0,
+        },
+      ],
+    };
+    const templates = new MemoryTemplates(template);
+    const created = await new CreateOnboardingTemplateUseCase(templates, new MemoryAudit()).execute(
+      { name: "Default", positionId: "p1" },
+      "u-hr",
+    );
+    expect(created.id).toBe("tmpl");
+    expect((await new ListOnboardingTemplatesUseCase(templates).execute())[0]?.id).toBe("tmpl");
+    await new UpdateOnboardingTemplateUseCase(templates).execute("tmpl", { name: "Updated" });
+    await new AddOnboardingTemplateItemUseCase(templates).execute({
+      templateId: "tmpl",
+      title: "Email",
+      description: "x",
+      assigneeKind: "IT",
+      sortOrder: 1,
+    });
+    await new UpdateOnboardingTemplateItemUseCase(templates).execute("i1", { title: "Laptop setup" });
+    await new DeleteOnboardingTemplateItemUseCase(templates).execute("i1");
+    const processes = new MemoryProcesses();
+    const started = await new StartOnboardingProcessUseCase(templates, processes).execute({
+      employeeId: "e1",
+      positionId: "p1",
+      managerId: null,
+    });
+    expect(started?.employeeId).toBe("e1");
+    const again = await new StartOnboardingProcessUseCase(templates, processes).execute({
+      employeeId: "e1",
+      positionId: "p1",
+      managerId: null,
+    });
+    expect(again?.id).toBe(started?.id);
+    expect((await new GetOnboardingProcessUseCase(processes).execute("e1")).id).toBe("proc1");
+    expect(
+      (await new ListOnboardingDashboardUseCase(processes).execute({ page: 1, pageSize: 20, skip: 0, take: 20 })).total,
+    ).toBe(0);
+    await expect(new UpdateOnboardingTemplateUseCase(templates).execute("missing", { name: "x" })).rejects.toBeInstanceOf(
+      NotFoundError,
+    );
+    await expect(
+      new AddOnboardingTemplateItemUseCase(new MemoryTemplates(null)).execute({
+        templateId: "x",
+        title: "x",
+        description: "x",
+        assigneeKind: "HR",
+        sortOrder: 0,
+      }),
+    ).rejects.toBeInstanceOf(NotFoundError);
+    await expect(new GetOnboardingProcessUseCase(new MemoryProcesses()).execute("e1")).rejects.toBeInstanceOf(
+      NotFoundError,
+    );
   });
 });

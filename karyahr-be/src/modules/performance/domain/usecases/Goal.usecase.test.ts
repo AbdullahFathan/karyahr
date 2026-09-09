@@ -13,10 +13,15 @@ import { assertParentLevel, computeProgressPercent } from "../performance-invari
 import type { CreateGoalInput, GoalListFilter, IGoalRepository, UpdateGoalInput } from "../repositories/IPerformanceRepository";
 import {
   ApproveGoalUseCase,
+  CloseGoalUseCase,
   CreateGoalUseCase,
   DecideGoalUseCase,
+  GetGoalUseCase,
+  ListGoalsUseCase,
   RejectGoalUseCase,
   SubmitGoalUseCase,
+  UpdateGoalProgressUseCase,
+  UpdateGoalUseCase,
   type PerformanceActor,
 } from "./Goal.usecase";
 
@@ -330,5 +335,63 @@ describe("goal approval", () => {
     await expect(new RejectGoalUseCase(decide).execute(employeeActor(), created.id)).rejects.toBeInstanceOf(
       ForbiddenError,
     );
+  });
+});
+
+describe("goal update progress close and list", () => {
+  test("owner updates a draft, then progress after approval, then closes", async () => {
+    const goals = new MemoryGoals();
+    const employees = new MemoryEmployees([employee, manager]);
+    const users = new MemoryUsers([employeeUser, managerUser]);
+    const dispatcher = new MemoryDispatcher();
+    const audit = new MemoryAudit();
+    const create = new CreateGoalUseCase(goals, employees, audit);
+    const created = await create.execute(employeeActor(), {
+      level: "EMPLOYEE",
+      title: "KPI",
+      description: "x",
+      keyResults: [{ title: "PRs", targetValue: 10, weight: 100, currentValue: 0 }],
+    });
+    const updated = await new UpdateGoalUseCase(goals, audit).execute(employeeActor(), created.id, {
+      title: "KPI v2",
+    });
+    expect(updated.title).toBe("KPI v2");
+    await new SubmitGoalUseCase(goals, employees, users, dispatcher, audit).execute(employeeActor(), created.id);
+    await new ApproveGoalUseCase(
+      new DecideGoalUseCase(goals, employees, users, dispatcher, audit),
+    ).execute(managerActor(), created.id);
+    const progressed = await new UpdateGoalProgressUseCase(goals, audit).execute(employeeActor(), created.id, [
+      { title: "PRs", targetValue: 10, weight: 100, currentValue: 5 },
+    ]);
+    expect(progressed.progressPercent).toBe(50);
+    const closed = await new CloseGoalUseCase(goals, audit).execute(employeeActor(), created.id, "COMPLETED");
+    expect(closed.status).toBe("COMPLETED");
+    const listed = await new ListGoalsUseCase(goals, employees).execute(hrActor(), {
+      pagination: { page: 1, pageSize: 20, skip: 0, take: 20 },
+    });
+    expect(listed.total).toBe(1);
+    const mine = await new ListGoalsUseCase(goals, employees).execute(employeeActor(), {
+      mine: true,
+      pagination: { page: 1, pageSize: 20, skip: 0, take: 20 },
+    });
+    expect(mine.total).toBe(1);
+    expect((await new GetGoalUseCase(goals, employees).execute(employeeActor(), created.id)).id).toBe(created.id);
+  });
+
+  test("forbids a stranger from viewing or updating", async () => {
+    const goals = new MemoryGoals();
+    const employees = new MemoryEmployees([employee, manager]);
+    const created = await new CreateGoalUseCase(goals, employees, new MemoryAudit()).execute(employeeActor(), {
+      level: "EMPLOYEE",
+      title: "KPI",
+      description: "x",
+    });
+    const stranger: PerformanceActor = { userId: "u-x", employeeId: "x1", permissionKeys: [] };
+    await expect(new GetGoalUseCase(goals, employees).execute(stranger, created.id)).rejects.toBeInstanceOf(
+      ForbiddenError,
+    );
+    await expect(
+      new UpdateGoalUseCase(goals, new MemoryAudit()).execute(stranger, created.id, { title: "no" }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
   });
 });

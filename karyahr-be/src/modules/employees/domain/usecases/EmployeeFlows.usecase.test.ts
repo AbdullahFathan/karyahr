@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { IAuditLogRepository } from "../../../../shared/audit/IAuditLogRepository";
-import { ForbiddenError } from "../../../../shared/errors/app-error";
+import { ForbiddenError, NotFoundError, ValidationError } from "../../../../shared/errors/app-error";
 import { requirePermission } from "../../../../shared/middleware/require-permission";
 import type { Employee, EmployeeChangeRequest, EssPayload } from "../entities/Employee";
 import type {
@@ -11,8 +11,10 @@ import type {
 import {
   ApproveChangeRequestUseCase,
   CreateChangeRequestUseCase,
+  ListMyChangeRequestsUseCase,
+  RejectChangeRequestUseCase,
 } from "./EmployeeChangeRequest.usecase";
-import { CreateEmployeeMutationUseCase } from "./EmployeeMutation.usecase";
+import { CreateEmployeeMutationUseCase, ListEmployeeMutationsUseCase } from "./EmployeeMutation.usecase";
 
 function sampleEmployee(overrides: Partial<Employee> = {}): Employee {
   return {
@@ -45,6 +47,9 @@ class MemoryEmployees implements IEmployeeRepository {
   }
   async findById(id: string): Promise<Employee | null> {
     return this.employee.id === id ? this.employee : null;
+  }
+  async findByIds(ids: readonly string[]): Promise<readonly Employee[]> {
+    return ids.includes(this.employee.id) ? [this.employee] : [];
   }
   async findByNationalId(): Promise<Employee | null> {
     return null;
@@ -137,6 +142,32 @@ describe("ApproveChangeRequestUseCase", () => {
   });
 });
 
+describe("RejectChangeRequestUseCase", () => {
+  test("rejects a pending request", async () => {
+    const requests = new MemoryRequests();
+    await requests.create({ employeeId: "e1", payload: { phone: "083" } });
+    const rejected = await new RejectChangeRequestUseCase(requests, silentAudit).execute(
+      "cr1",
+      "hr1",
+      "no",
+    );
+    expect(rejected.status).toBe("REJECTED");
+    expect(await new ListMyChangeRequestsUseCase(requests).execute("e1")).toHaveLength(1);
+  });
+
+  test("throws when the request is missing or already reviewed", async () => {
+    const requests = new MemoryRequests();
+    await expect(
+      new RejectChangeRequestUseCase(requests, silentAudit).execute("missing", "hr1", null),
+    ).rejects.toBeInstanceOf(NotFoundError);
+    await requests.create({ employeeId: "e1", payload: { phone: "083" } });
+    await new RejectChangeRequestUseCase(requests, silentAudit).execute("cr1", "hr1", null);
+    await expect(
+      new RejectChangeRequestUseCase(requests, silentAudit).execute("cr1", "hr1", null),
+    ).rejects.toBeInstanceOf(ValidationError);
+  });
+});
+
 describe("CreateEmployeeMutationUseCase", () => {
   test("moves department and position", async () => {
     const employees = new MemoryEmployees(sampleEmployee());
@@ -162,6 +193,32 @@ describe("CreateEmployeeMutationUseCase", () => {
     });
     expect(mutation.toDepartmentId).toBe("d2");
     expect((await employees.findById("e1"))?.departmentId).toBe("d2");
+    expect(await new ListEmployeeMutationsUseCase(employees, mutations).execute("e1")).toEqual([]);
+  });
+
+  test("rejects a no-op mutation", async () => {
+    const employees = new MemoryEmployees(sampleEmployee());
+    const mutations = {
+      async create(input: Omit<import("../entities/Employee").EmployeeMutation, "id">) {
+        return { id: "m1", ...input };
+      },
+      async listByEmployee() {
+        return [];
+      },
+    };
+    await expect(
+      new CreateEmployeeMutationUseCase(employees, mutations, silentAudit).execute({
+        employeeId: "e1",
+        toDepartmentId: "d1",
+        toPositionId: "p1",
+        effectiveAt: new Date(),
+        reason: "same",
+        createdByUserId: "u1",
+      }),
+    ).rejects.toBeInstanceOf(ValidationError);
+    await expect(
+      new ListEmployeeMutationsUseCase(employees, mutations).execute("missing"),
+    ).rejects.toBeInstanceOf(NotFoundError);
   });
 });
 
