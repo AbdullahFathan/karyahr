@@ -210,22 +210,32 @@ export class PrismaOnboardingProcessRepository implements IOnboardingProcessRepo
     return toProcess(row);
   }
 
-  async listDashboard(): Promise<readonly OnboardingDashboardRow[]> {
-    const rows = await this.prisma.onboardingProcess.findMany({
-      include: { tasks: true },
-      orderBy: { createdAt: "desc" },
-    });
-    return rows.map((row) => {
-      const totalCount = row.tasks.length;
-      const completedCount = row.tasks.filter((task) => task.completedAt !== null).length;
-      return {
-        employeeId: row.employeeId,
-        processId: row.id,
-        status: row.status,
-        completedCount,
-        totalCount,
-        progress: totalCount === 0 ? 1 : completedCount / totalCount,
-      };
-    });
+  async listDashboard(
+    pagination: import("../../../shared/utils/pagination").PaginationParams,
+  ): Promise<{ readonly items: readonly OnboardingDashboardRow[]; readonly total: number }> {
+    const [total, rows] = await Promise.all([
+      this.prisma.onboardingProcess.count(),
+      this.prisma.onboardingProcess.findMany({
+        include: { tasks: true },
+        orderBy: { createdAt: "desc" },
+        skip: pagination.skip,
+        take: pagination.take,
+      }),
+    ]);
+    return {
+      total,
+      items: rows.map((row) => {
+        const totalCount = row.tasks.length;
+        const completedCount = row.tasks.filter((task) => task.completedAt !== null).length;
+        return {
+          employeeId: row.employeeId,
+          processId: row.id,
+          status: row.status,
+          completedCount,
+          totalCount,
+          progress: totalCount === 0 ? 1 : completedCount / totalCount,
+        };
+      }),
+    };
   }
 }

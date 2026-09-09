@@ -1,4 +1,5 @@
 import type { PrismaClient } from "../../../../prisma/generated/prisma/client";
+import type { PaginationParams } from "../../../shared/utils/pagination";
 import type {
   LeaveApproval,
   LeaveAttachment,
@@ -18,6 +19,7 @@ import type {
   ILeavePolicyRepository,
   ILeaveRequestRepository,
   ILeaveTypeRepository,
+  LeaveListResult,
   UpdateLeavePolicyInput,
   UpdateLeaveTypeInput,
 } from "../domain/repositories/ILeaveRepository";
@@ -223,36 +225,60 @@ export class PrismaLeaveRequestRepository implements ILeaveRequestRepository {
     return row ? mapDetail(row) : null;
   }
 
-  async listByEmployee(employeeId: string): Promise<readonly LeaveRequest[]> {
-    const rows = await this.prisma.leaveRequest.findMany({
-      where: { employeeId },
-      orderBy: { createdAt: "desc" },
-    });
-    return rows.map(toRequest);
+  async listByEmployee(
+    employeeId: string,
+    pagination: PaginationParams,
+  ): Promise<LeaveListResult<LeaveRequest>> {
+    const where = { employeeId };
+    const [total, rows] = await Promise.all([
+      this.prisma.leaveRequest.count({ where }),
+      this.prisma.leaveRequest.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: pagination.skip,
+        take: pagination.take,
+      }),
+    ]);
+    return { total, items: rows.map(toRequest) };
   }
 
-  async listPending(): Promise<readonly LeaveRequest[]> {
-    const rows = await this.prisma.leaveRequest.findMany({
-      where: { status: "PENDING" },
-      orderBy: { createdAt: "asc" },
-    });
-    return rows.map(toRequest);
+  async listPending(pagination: PaginationParams): Promise<LeaveListResult<LeaveRequest>> {
+    const where = { status: "PENDING" as const };
+    const [total, rows] = await Promise.all([
+      this.prisma.leaveRequest.count({ where }),
+      this.prisma.leaveRequest.findMany({
+        where,
+        orderBy: { createdAt: "asc" },
+        skip: pagination.skip,
+        take: pagination.take,
+      }),
+    ]);
+    return { total, items: rows.map(toRequest) };
   }
 
-  async listPendingForApprover(approverEmployeeId: string): Promise<readonly LeaveRequest[]> {
-    const rows = await this.prisma.leaveRequest.findMany({
-      where: {
-        status: "PENDING",
-        approvals: {
-          some: {
-            status: "PENDING",
-            approverEmployeeId,
-          },
+  async listPendingForApprover(
+    approverEmployeeId: string,
+    pagination: PaginationParams,
+  ): Promise<LeaveListResult<LeaveRequest>> {
+    const where = {
+      status: "PENDING" as const,
+      approvals: {
+        some: {
+          status: "PENDING" as const,
+          approverEmployeeId,
         },
       },
-      orderBy: { createdAt: "asc" },
-    });
-    return rows.map(toRequest);
+    };
+    const [total, rows] = await Promise.all([
+      this.prisma.leaveRequest.count({ where }),
+      this.prisma.leaveRequest.findMany({
+        where,
+        orderBy: { createdAt: "asc" },
+        skip: pagination.skip,
+        take: pagination.take,
+      }),
+    ]);
+    return { total, items: rows.map(toRequest) };
   }
 
   async updateStatus(

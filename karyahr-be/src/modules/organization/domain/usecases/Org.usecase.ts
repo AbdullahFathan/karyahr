@@ -233,11 +233,10 @@ export class GetOrgTreeUseCase {
     private readonly employees: IOrgTreeReader,
   ) {}
 
-  async execute(): Promise<readonly OrgTreeNode[]> {
-    const [departments, positions, employees] = await Promise.all([
+  async execute(departmentId?: string): Promise<readonly OrgTreeNode[]> {
+    const [departments, positions] = await Promise.all([
       this.departments.list(),
       this.positions.list(),
-      this.employees.listEmployeesForTree(),
     ]);
     const byParent = new Map<string | null, Department[]>();
     for (const department of departments) {
@@ -245,28 +244,70 @@ export class GetOrgTreeUseCase {
       siblings.push(department);
       byParent.set(department.parentId, siblings);
     }
+
+    const collectDescendantIds = (rootId: string): string[] => {
+      const ids = [rootId];
+      const children = byParent.get(rootId) ?? [];
+      for (const child of children) {
+        ids.push(...collectDescendantIds(child.id));
+      }
+      return ids;
+    };
+
+    const scopedDepartmentIds = departmentId ? collectDescendantIds(departmentId) : null;
+    const employeeRows = departmentId
+      ? await this.employees.listEmployeesForTree(scopedDepartmentIds ?? [])
+      : [];
+
     const build = (parentId: string | null): OrgTreeNode[] => {
       const nodes = byParent.get(parentId) ?? [];
-      return nodes.map((department) => {
-        const deptPositions = positions.filter((position) => position.departmentId === department.id);
-        const deptEmployees = employees.filter(
-          (employee) => employee.departmentId === department.id,
-        );
-        return {
-          id: department.id,
-          name: department.name,
-          code: department.code,
-          isActive: department.isActive,
+      return nodes
+        .filter((department) => !scopedDepartmentIds || scopedDepartmentIds.includes(department.id))
+        .map((department) => {
+          const deptPositions = positions.filter((position) => position.departmentId === department.id);
+          const deptEmployees = employeeRows.filter(
+            (employee) => employee.departmentId === department.id,
+          );
+          return {
+            id: department.id,
+            name: department.name,
+            code: department.code,
+            isActive: department.isActive,
+            positions: deptPositions.map((position) => ({
+              id: position.id,
+              name: position.name,
+              code: position.code,
+            })),
+            employees: deptEmployees,
+            children: build(department.id),
+          };
+        });
+    };
+
+    if (departmentId) {
+      const root = departments.find((item) => item.id === departmentId);
+      if (!root) {
+        return [];
+      }
+      const deptPositions = positions.filter((position) => position.departmentId === root.id);
+      const deptEmployees = employeeRows.filter((employee) => employee.departmentId === root.id);
+      return [
+        {
+          id: root.id,
+          name: root.name,
+          code: root.code,
+          isActive: root.isActive,
           positions: deptPositions.map((position) => ({
             id: position.id,
             name: position.name,
             code: position.code,
           })),
           employees: deptEmployees,
-          children: build(department.id),
-        };
-      });
-    };
+          children: build(root.id),
+        },
+      ];
+    }
+
     return build(null);
   }
 }

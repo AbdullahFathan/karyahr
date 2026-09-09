@@ -200,8 +200,14 @@ class MemoryApplications implements IApplicationRepository {
   async findByJobAndCandidate(jobPostingId: string, candidateId: string): Promise<Application | null> {
     return this.items.find((item) => item.jobPostingId === jobPostingId && item.candidateId === candidateId) ?? null;
   }
-  async listByJob(): Promise<readonly ApplicationDetail[]> {
-    return this.items;
+  async listByJob(
+    _jobPostingId: string,
+    pagination: { readonly skip: number; readonly take: number },
+  ) {
+    return {
+      total: this.items.length,
+      items: this.items.slice(pagination.skip, pagination.skip + pagination.take),
+    };
   }
   async updateStage(id: string, stageId: string): Promise<ApplicationDetail> {
     this.items = this.items.map((item) =>
@@ -275,7 +281,7 @@ class MemoryEmployees implements IEmployeeRepository {
     return { items: this.items, total: this.items.length };
   }
   async listDirectory() {
-    return this.items;
+    return { items: this.items, total: this.items.length };
   }
 }
 
@@ -353,8 +359,8 @@ class MemoryProcesses implements IOnboardingProcessRepository {
     this.process = { ...this.process!, status: "COMPLETED" };
     return this.process;
   }
-  async listDashboard() {
-    return [];
+  async listDashboard(pagination: { readonly skip: number; readonly take: number }) {
+    return { items: [], total: 0 };
   }
 }
 

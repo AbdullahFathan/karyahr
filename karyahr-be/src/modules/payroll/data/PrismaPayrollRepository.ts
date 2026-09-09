@@ -1,5 +1,6 @@
 import type { Prisma, PrismaClient } from "../../../../prisma/generated/prisma/client";
 import type { AesGcmCipher } from "../../../shared/crypto/aes-gcm";
+import type { PaginationParams } from "../../../shared/utils/pagination";
 import type {
   EmployeePayrollProfile,
   EmployeeSalaryAssignment,
@@ -21,6 +22,7 @@ import type {
   IPayslipRepository,
   ISalaryComponentRepository,
   IStatutorySettingRepository,
+  PayrollListResult,
 } from "../domain/repositories/IPayrollRepository";
 import { DEFAULT_STATUTORY_RATES, parseStatutoryRates } from "../domain/statutory/rates";
 import type { StatutoryRates } from "../domain/statutory/rates";
@@ -246,6 +248,16 @@ export class PrismaEmployeePayrollProfileRepository implements IEmployeePayrollP
     const row = await this.prisma.employeePayrollProfile.findUnique({ where: { employeeId } });
     return row ? toProfile(row, this.cipher) : null;
   }
+
+  async findByEmployeeIds(employeeIds: readonly string[]): Promise<readonly EmployeePayrollProfile[]> {
+    if (employeeIds.length === 0) {
+      return [];
+    }
+    const rows = await this.prisma.employeePayrollProfile.findMany({
+      where: { employeeId: { in: [...employeeIds] } },
+    });
+    return rows.map((row) => toProfile(row, this.cipher));
+  }
 }
 
 /**
@@ -311,9 +323,16 @@ export class PrismaPayrollRunRepository implements IPayrollRunRepository {
     return row ? toRun(row) : null;
   }
 
-  async list(): Promise<readonly PayrollRun[]> {
-    const rows = await this.prisma.payrollRun.findMany({ orderBy: { createdAt: "desc" } });
-    return rows.map(toRun);
+  async list(pagination: PaginationParams): Promise<PayrollListResult<PayrollRun>> {
+    const [total, rows] = await Promise.all([
+      this.prisma.payrollRun.count(),
+      this.prisma.payrollRun.findMany({
+        orderBy: { createdAt: "desc" },
+        skip: pagination.skip,
+        take: pagination.take,
+      }),
+    ]);
+    return { total, items: rows.map(toRun) };
   }
 
   async markProcessing(id: string): Promise<PayrollRun | null> {
@@ -399,6 +418,23 @@ export class PrismaPayslipRepository implements IPayslipRepository {
     return rows.map((row) => toPayslip(row, this.cipher));
   }
 
+  async listByRunPage(
+    payrollRunId: string,
+    pagination: PaginationParams,
+  ): Promise<PayrollListResult<Payslip>> {
+    const where = { payrollRunId };
+    const [total, rows] = await Promise.all([
+      this.prisma.payslip.count({ where }),
+      this.prisma.payslip.findMany({
+        where,
+        orderBy: { employeeId: "asc" },
+        skip: pagination.skip,
+        take: pagination.take,
+      }),
+    ]);
+    return { total, items: rows.map((row) => toPayslip(row, this.cipher)) };
+  }
+
   async listByEmployee(employeeId: string, from?: Date, to?: Date): Promise<readonly Payslip[]> {
     const rows = await this.prisma.payslip.findMany({
       where: {
@@ -414,6 +450,34 @@ export class PrismaPayslipRepository implements IPayslipRepository {
       orderBy: { createdAt: "desc" },
     });
     return rows.map((row) => toPayslip(row, this.cipher));
+  }
+
+  async listByEmployeePage(
+    employeeId: string,
+    pagination: PaginationParams,
+    from?: Date,
+    to?: Date,
+  ): Promise<PayrollListResult<Payslip>> {
+    const where = {
+      employeeId,
+      run:
+        from && to
+          ? {
+              periodStart: { gte: from },
+              periodEnd: { lte: to },
+            }
+          : undefined,
+    };
+    const [total, rows] = await Promise.all([
+      this.prisma.payslip.count({ where }),
+      this.prisma.payslip.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: pagination.skip,
+        take: pagination.take,
+      }),
+    ]);
+    return { total, items: rows.map((row) => toPayslip(row, this.cipher)) };
   }
 
   async listByYear(year: number): Promise<readonly Payslip[]> {

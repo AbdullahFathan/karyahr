@@ -9,6 +9,7 @@ import type {
 import type {
   CreateEmployeeInput,
   EmployeeDirectoryFilter,
+  EmployeeDirectoryResult,
   EmployeeListFilter,
   EmployeeListResult,
   IEmployeeChangeRequestRepository,
@@ -69,6 +70,14 @@ export class PrismaEmployeeRepository implements IEmployeeRepository {
     return row ? toEmployee(row) : null;
   }
 
+  async findByIds(ids: readonly string[]): Promise<readonly Employee[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+    const rows = await this.prisma.employee.findMany({ where: { id: { in: [...ids] } } });
+    return rows.map(toEmployee);
+  }
+
   async findByNationalId(nationalId: string): Promise<Employee | null> {
     const row = await this.prisma.employee.findUnique({ where: { nationalId } });
     return row ? toEmployee(row) : null;
@@ -105,15 +114,30 @@ export class PrismaEmployeeRepository implements IEmployeeRepository {
     return { total, items: rows.map(toEmployee) };
   }
 
-  async listDirectory(filter: EmployeeDirectoryFilter): Promise<readonly Employee[]> {
-    const rows = await this.prisma.employee.findMany({
-      where: {
-        managerId: filter.managerId,
-        status: filter.statuses ? { in: [...filter.statuses] } : undefined,
-      },
-      orderBy: { fullName: "asc" },
-    });
-    return rows.map(toEmployee);
+  async listDirectory(filter: EmployeeDirectoryFilter): Promise<EmployeeDirectoryResult> {
+    const where = {
+      managerId: filter.managerId,
+      departmentId: filter.departmentId,
+      status: filter.statuses ? { in: [...filter.statuses] } : undefined,
+    };
+    const pagination = filter.pagination;
+    if (!pagination) {
+      const rows = await this.prisma.employee.findMany({
+        where,
+        orderBy: { fullName: "asc" },
+      });
+      return { total: rows.length, items: rows.map(toEmployee) };
+    }
+    const [total, rows] = await Promise.all([
+      this.prisma.employee.count({ where }),
+      this.prisma.employee.findMany({
+        where,
+        orderBy: { fullName: "asc" },
+        skip: pagination.skip,
+        take: pagination.take,
+      }),
+    ]);
+    return { total, items: rows.map(toEmployee) };
   }
 }
 

@@ -1,3 +1,4 @@
+import type { PaginationParams } from "../../../../shared/utils/pagination";
 import type {
   EmployeePayrollProfile,
   EmployeeSalaryAssignment,
@@ -13,6 +14,11 @@ import type {
 } from "../entities/Payroll";
 import type { StatutoryRates } from "../statutory/rates";
 
+export type PayrollListResult<T> = {
+  readonly items: readonly T[];
+  readonly total: number;
+};
+
 export type ISalaryComponentRepository = {
   create(input: Omit<SalaryComponent, "id">): Promise<SalaryComponent>;
   update(id: string, input: Partial<Omit<SalaryComponent, "id" | "code">> & { readonly code?: string }): Promise<SalaryComponent>;
@@ -24,6 +30,7 @@ export type ISalaryComponentRepository = {
 export type IEmployeePayrollProfileRepository = {
   upsert(input: Omit<EmployeePayrollProfile, "id">): Promise<EmployeePayrollProfile>;
   findByEmployeeId(employeeId: string): Promise<EmployeePayrollProfile | null>;
+  findByEmployeeIds(employeeIds: readonly string[]): Promise<readonly EmployeePayrollProfile[]>;
 };
 
 export type IEmployeeSalaryAssignmentRepository = {
@@ -45,7 +52,7 @@ export type CreatePayrollRunInput = {
 export type IPayrollRunRepository = {
   create(input: CreatePayrollRunInput): Promise<PayrollRun>;
   findById(id: string): Promise<PayrollRun | null>;
-  list(): Promise<readonly PayrollRun[]>;
+  list(pagination: PaginationParams): Promise<PayrollListResult<PayrollRun>>;
   markProcessing(id: string): Promise<PayrollRun | null>;
   complete(
     id: string,
@@ -64,7 +71,17 @@ export type IPayslipRepository = {
   findById(id: string): Promise<Payslip | null>;
   findByRunAndEmployee(payrollRunId: string, employeeId: string): Promise<Payslip | null>;
   listByRun(payrollRunId: string): Promise<readonly Payslip[]>;
+  listByRunPage(
+    payrollRunId: string,
+    pagination: PaginationParams,
+  ): Promise<PayrollListResult<Payslip>>;
   listByEmployee(employeeId: string, from?: Date, to?: Date): Promise<readonly Payslip[]>;
+  listByEmployeePage(
+    employeeId: string,
+    pagination: PaginationParams,
+    from?: Date,
+    to?: Date,
+  ): Promise<PayrollListResult<Payslip>>;
   listByYear(year: number): Promise<readonly Payslip[]>;
   setPdfObjectKey(id: string, objectKey: string): Promise<Payslip>;
 };

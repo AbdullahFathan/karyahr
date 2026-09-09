@@ -29,17 +29,25 @@ export type UpdateEmployeeInput = Partial<Omit<Employee, "id" | "nationalId" | "
 
 export type EmployeeDirectoryFilter = {
   readonly managerId?: string;
+  readonly departmentId?: string;
   readonly statuses?: readonly EmployeeStatus[];
+  readonly pagination?: PaginationParams;
+};
+
+export type EmployeeDirectoryResult = {
+  readonly items: readonly Employee[];
+  readonly total: number;
 };
 
 export type IEmployeeRepository = {
   create(input: CreateEmployeeInput): Promise<Employee>;
   update(id: string, input: UpdateEmployeeInput): Promise<Employee>;
   findById(id: string): Promise<Employee | null>;
+  findByIds(ids: readonly string[]): Promise<readonly Employee[]>;
   findByNationalId(nationalId: string): Promise<Employee | null>;
   findByEmployeeNumber(employeeNumber: string): Promise<Employee | null>;
   list(filter: EmployeeListFilter): Promise<EmployeeListResult>;
-  listDirectory(filter: EmployeeDirectoryFilter): Promise<readonly Employee[]>;
+  listDirectory(filter: EmployeeDirectoryFilter): Promise<EmployeeDirectoryResult>;
 };
 
 export type IEmployeeMutationRepository = {

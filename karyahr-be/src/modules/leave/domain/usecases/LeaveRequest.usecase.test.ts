@@ -113,7 +113,7 @@ class MemoryEmployees implements IEmployeeRepository {
     return { items: this.items, total: this.items.length };
   }
   async listDirectory() {
-    return this.items;
+    return { items: this.items, total: this.items.length };
   }
 }
 
@@ -239,14 +239,28 @@ class MemoryRequests implements ILeaveRequestRepository {
   async findById(id: string): Promise<LeaveRequestDetail | null> {
     return this.details.find((item) => item.request.id === id) ?? null;
   }
-  async listByEmployee(employeeId: string): Promise<readonly LeaveRequest[]> {
-    return this.details.filter((item) => item.request.employeeId === employeeId).map((item) => item.request);
+  async listByEmployee(
+    employeeId: string,
+    pagination: { readonly skip: number; readonly take: number },
+  ): Promise<{ readonly items: readonly LeaveRequest[]; readonly total: number }> {
+    const all = this.details
+      .filter((item) => item.request.employeeId === employeeId)
+      .map((item) => item.request);
+    return { total: all.length, items: all.slice(pagination.skip, pagination.skip + pagination.take) };
   }
-  async listPending(): Promise<readonly LeaveRequest[]> {
-    return this.details.filter((item) => item.request.status === "PENDING").map((item) => item.request);
+  async listPending(
+    pagination: { readonly skip: number; readonly take: number },
+  ): Promise<{ readonly items: readonly LeaveRequest[]; readonly total: number }> {
+    const all = this.details
+      .filter((item) => item.request.status === "PENDING")
+      .map((item) => item.request);
+    return { total: all.length, items: all.slice(pagination.skip, pagination.skip + pagination.take) };
   }
-  async listPendingForApprover(): Promise<readonly LeaveRequest[]> {
-    return this.listPending();
+  async listPendingForApprover(
+    _approverEmployeeId: string,
+    pagination: { readonly skip: number; readonly take: number },
+  ): Promise<{ readonly items: readonly LeaveRequest[]; readonly total: number }> {
+    return this.listPending(pagination);
   }
   async updateStatus(
     id: string,

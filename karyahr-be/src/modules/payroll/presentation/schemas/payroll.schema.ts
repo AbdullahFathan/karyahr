@@ -43,6 +43,13 @@ export const createPayrollRunSchema = z.object({
 export const payslipRangeQuerySchema = z.object({
   from: dateKey.optional(),
   to: dateKey.optional(),
+  page: z.coerce.number().int().positive().optional(),
+  pageSize: z.coerce.number().int().positive().optional(),
+});
+
+export const paginationQuerySchema = z.object({
+  page: z.coerce.number().int().positive().optional(),
+  pageSize: z.coerce.number().int().positive().optional(),
 });
 
 export const exportYearQuerySchema = z.object({

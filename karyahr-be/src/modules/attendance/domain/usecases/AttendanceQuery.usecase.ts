@@ -1,4 +1,5 @@
-import { ForbiddenError } from "../../../../shared/errors/app-error";
+import { ForbiddenError, ValidationError } from "../../../../shared/errors/app-error";
+import type { PaginationMeta, PaginationParams } from "../../../../shared/utils/pagination";
 import type { IEmployeeRepository } from "../../../employees/domain/repositories/IEmployeeRepository";
 import type { AttendanceRecord } from "../entities/Attendance";
 import { addWorkDays, formatWorkDate, workDateFromInstant } from "../jakarta-time";
@@ -6,6 +7,7 @@ import type { IApprovedLeaveLookup } from "../ports/IApprovedLeaveLookup";
 import type { IAttendanceRecordRepository } from "../repositories/IAttendanceRepository";
 
 const ACTIVE_STATUSES = ["ACTIVE", "PROBATION"] as const;
+const MAX_EXPORT_SPAN_DAYS = 31;
 
 export type AttendanceScope = {
   readonly actorEmployeeId: string;
@@ -34,6 +36,7 @@ export type AttendanceDashboard = {
   readonly late: readonly DashboardRow[];
   readonly absent: readonly DashboardRow[];
   readonly onLeave: readonly DashboardRow[];
+  readonly meta: PaginationMeta;
 };
 
 function periodRange(
@@ -120,15 +123,24 @@ export class GetAttendanceDashboardUseCase {
     private readonly clock: () => Date = () => new Date(),
   ) {}
 
-  async execute(scope: AttendanceScope): Promise<AttendanceDashboard> {
+  async execute(
+    scope: AttendanceScope,
+    options: {
+      readonly pagination: PaginationParams;
+      readonly departmentId?: string;
+    },
+  ): Promise<AttendanceDashboard> {
     if (!scope.isHr && !scope.isManager) {
       throw new ForbiddenError();
     }
     const workDate = workDateFromInstant(this.clock());
-    const directory = await this.employees.listDirectory({
+    const directoryResult = await this.employees.listDirectory({
       managerId: scope.isHr ? undefined : scope.actorEmployeeId,
+      departmentId: scope.isHr ? options.departmentId : undefined,
       statuses: ACTIVE_STATUSES,
+      pagination: options.pagination,
     });
+    const directory = directoryResult.items;
     const ids = directory.map((item) => item.id);
     const [rows, onLeaveIds] = await Promise.all([
       ids.length > 0 ? this.records.listOnWorkDate(workDate, ids) : Promise.resolve([]),
@@ -163,7 +175,22 @@ export class GetAttendanceDashboardUseCase {
       }
     }
 
-    return { workDate, present, late, absent, onLeave: leaveRows };
+    return {
+      workDate,
+      present,
+      late,
+      absent,
+      onLeave: leaveRows,
+      meta: {
+        total: directoryResult.total,
+        page: options.pagination.page,
+        pageSize: options.pagination.pageSize,
+        totalPages:
+          options.pagination.pageSize === 0
+            ? 0
+            : Math.ceil(directoryResult.total / options.pagination.pageSize),
+      },
+    };
   }
 }
 
@@ -174,6 +201,14 @@ export class ExportAttendanceCsvUseCase {
   constructor(private readonly records: IAttendanceRecordRepository) {}
 
   async execute(from: Date, to: Date): Promise<string> {
+    const spanDays =
+      Math.floor((to.getTime() - from.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+    if (spanDays < 1) {
+      throw new ValidationError("to must be on or after from");
+    }
+    if (spanDays > MAX_EXPORT_SPAN_DAYS) {
+      throw new ValidationError(`Attendance export span must be at most ${MAX_EXPORT_SPAN_DAYS} days`);
+    }
     const rows = await this.records.list({ from, to });
     const header = [
       "employeeId",

@@ -29,10 +29,12 @@ export class GetTeamDistributionUseCase {
     if (targetManagerId !== actor.employeeId && !isHr(actor)) {
       throw new ForbiddenError("Not allowed to view another manager's team");
     }
-    const members = await this.employees.listDirectory({
-      managerId: targetManagerId,
-      statuses: ["ACTIVE", "PROBATION"],
-    });
+    const members = (
+      await this.employees.listDirectory({
+        managerId: targetManagerId,
+        statuses: ["ACTIVE", "PROBATION"],
+      })
+    ).items;
     const memberIds = new Set(members.map((item) => item.id));
     const rows = (await this.reviews.listScoreRows(cycleId)).filter((row) => memberIds.has(row.employeeId));
     const completed = rows.filter((row) => row.status === "COMPLETED" && row.finalScore !== null);

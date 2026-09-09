@@ -14,6 +14,7 @@ import type {
 import {
   createDepartmentSchema,
   createPositionSchema,
+  orgTreeQuerySchema,
   updateDepartmentSchema,
   updatePositionSchema,
 } from "../schemas/org.schema";
@@ -86,8 +87,9 @@ export function createOrgController(deps: {
     res.status(204).send();
   });
 
-  const tree = asyncHandler(async (_req: Request, res: Response) => {
-    const data = await deps.getTree.execute();
+  const tree = asyncHandler(async (req: Request, res: Response) => {
+    const query = orgTreeQuerySchema.parse(req.query);
+    const data = await deps.getTree.execute(query.departmentId);
     res.status(200).json({ data });
   });
 

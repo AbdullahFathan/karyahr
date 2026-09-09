@@ -30,7 +30,7 @@ export class AccrueAnnualLeaveUseCase {
       return { accrued: 0 };
     }
     const policies = await this.policies.listByLeaveType(annual.id);
-    const directory = await this.employees.listDirectory({ statuses: ACTIVE_STATUSES });
+    const directory = (await this.employees.listDirectory({ statuses: ACTIVE_STATUSES })).items;
     let accrued = 0;
 
     for (const employee of directory) {

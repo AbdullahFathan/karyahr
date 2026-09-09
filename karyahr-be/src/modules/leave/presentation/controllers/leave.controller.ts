@@ -4,6 +4,7 @@ import { UnauthorizedError } from "../../../../shared/errors/app-error";
 import { PERMISSIONS } from "../../../../shared/auth/permissions";
 import { routeParam } from "../../../../shared/utils/route-param";
 import { parseWorkDate } from "../../../../shared/utils/jakarta-time";
+import { parsePagination, paginationMeta } from "../../../../shared/utils/pagination";
 import type {
   CreateLeavePolicyUseCase,
   CreateLeaveTypeUseCase,
@@ -24,6 +25,7 @@ import {
   createLeavePolicySchema,
   createLeaveRequestSchema,
   createLeaveTypeSchema,
+  paginationQuerySchema,
   reviewLeaveSchema,
   updateLeavePolicySchema,
   updateLeaveTypeSchema,
@@ -124,11 +126,23 @@ export function createLeaveController(deps: {
   });
 
   const listMine = asyncHandler(async (req: Request, res: Response) => {
-    res.status(200).json({ data: await deps.listMine.execute(actor(req).employeeId) });
+    const query = paginationQuerySchema.parse(req.query);
+    const pagination = parsePagination(query);
+    const result = await deps.listMine.execute(actor(req).employeeId, pagination);
+    res.status(200).json({
+      data: result.items,
+      meta: paginationMeta(result.total, pagination.page, pagination.pageSize),
+    });
   });
 
   const listInbox = asyncHandler(async (req: Request, res: Response) => {
-    res.status(200).json({ data: await deps.listInbox.execute(actor(req)) });
+    const query = paginationQuerySchema.parse(req.query);
+    const pagination = parsePagination(query);
+    const result = await deps.listInbox.execute(actor(req), pagination);
+    res.status(200).json({
+      data: result.items,
+      meta: paginationMeta(result.total, pagination.page, pagination.pageSize),
+    });
   });
 
   const listBalances = asyncHandler(async (req: Request, res: Response) => {

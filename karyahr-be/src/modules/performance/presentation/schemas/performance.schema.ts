@@ -41,6 +41,8 @@ export const listGoalsQuerySchema = z.object({
   level: z.enum(GOAL_LEVELS).optional(),
   status: z.enum(GOAL_STATUSES).optional(),
   parentGoalId: z.string().min(1).optional(),
+  page: z.coerce.number().int().positive().optional(),
+  pageSize: z.coerce.number().int().positive().optional(),
 });
 
 export const createCycleSchema = z.object({

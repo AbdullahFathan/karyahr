@@ -102,9 +102,11 @@ export class OpenCycleUseCase {
     if (cycle.status !== "DRAFT") {
       throw new ValidationError("Only draft cycles can be opened");
     }
-    const directory = await this.employees.listDirectory({
-      statuses: ["ACTIVE", "PROBATION"],
-    });
+    const directory = (
+      await this.employees.listDirectory({
+        statuses: ["ACTIVE", "PROBATION"],
+      })
+    ).items;
     await this.reviews.createMany(
       id,
       directory.map((item) => item.id),

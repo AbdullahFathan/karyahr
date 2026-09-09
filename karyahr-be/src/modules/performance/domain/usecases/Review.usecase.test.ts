@@ -94,7 +94,7 @@ class MemoryEmployees implements IEmployeeRepository {
     return { items: this.items, total: this.items.length };
   }
   async listDirectory(filter: { managerId?: string; statuses?: readonly Employee["status"][] }) {
-    return this.items.filter((item) => {
+    const items = this.items.filter((item) => {
       if (filter.managerId !== undefined && item.managerId !== filter.managerId) {
         return false;
       }
@@ -103,6 +103,7 @@ class MemoryEmployees implements IEmployeeRepository {
       }
       return true;
     });
+    return { items, total: items.length };
   }
 }
 

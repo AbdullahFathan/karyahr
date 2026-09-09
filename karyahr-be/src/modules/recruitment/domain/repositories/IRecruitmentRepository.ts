@@ -70,7 +70,10 @@ export type IApplicationRepository = {
   create(input: CreateApplicationInput): Promise<Application>;
   findById(id: string): Promise<ApplicationDetail | null>;
   findByJobAndCandidate(jobPostingId: string, candidateId: string): Promise<Application | null>;
-  listByJob(jobPostingId: string): Promise<readonly ApplicationDetail[]>;
+  listByJob(
+    jobPostingId: string,
+    pagination: PaginationParams,
+  ): Promise<{ readonly items: readonly ApplicationDetail[]; readonly total: number }>;
   updateStage(id: string, stageId: string): Promise<ApplicationDetail>;
   updateStatus(
     id: string,

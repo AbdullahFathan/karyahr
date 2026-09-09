@@ -192,8 +192,13 @@ export function createRecruitmentController(deps: {
   });
 
   const listApplications = asyncHandler(async (req: Request, res: Response) => {
-    const items = await deps.listApplications.execute(routeParam(req.params.id, "id"));
-    res.status(200).json({ data: items });
+    const query = listJobsQuerySchema.parse(req.query);
+    const pagination = parsePagination(query);
+    const result = await deps.listApplications.execute(routeParam(req.params.id, "id"), pagination);
+    res.status(200).json({
+      data: result.items,
+      meta: paginationMeta(result.total, pagination.page, pagination.pageSize),
+    });
   });
 
   const getApplication = asyncHandler(async (req: Request, res: Response) => {
@@ -307,8 +312,14 @@ export function createRecruitmentController(deps: {
     res.status(200).json({ data: process });
   });
 
-  const dashboard = asyncHandler(async (_req: Request, res: Response) => {
-    res.status(200).json({ data: await deps.dashboard.execute() });
+  const dashboard = asyncHandler(async (req: Request, res: Response) => {
+    const query = listJobsQuerySchema.parse(req.query);
+    const pagination = parsePagination(query);
+    const result = await deps.dashboard.execute(pagination);
+    res.status(200).json({
+      data: result.items,
+      meta: paginationMeta(result.total, pagination.page, pagination.pageSize),
+    });
   });
 
   return {

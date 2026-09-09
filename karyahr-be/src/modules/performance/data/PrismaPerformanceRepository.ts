@@ -169,24 +169,30 @@ export class PrismaGoalRepository implements IGoalRepository {
     return row ? toGoalDetail(row) : null;
   }
 
-  async list(filter: GoalListFilter): Promise<readonly GoalDetail[]> {
-    const rows = await this.prisma.goal.findMany({
-      where: {
-        employeeId: filter.employeeId,
-        departmentId: filter.departmentId,
-        level: filter.level,
-        status: filter.status,
-        parentGoalId: filter.parentGoalId,
-        ...(filter.employeeIds
-          ? {
-              OR: [{ employeeId: { in: [...filter.employeeIds] } }, { employeeId: null }],
-            }
-          : {}),
-      },
-      include: { keyResults: true },
-      orderBy: { createdAt: "desc" },
-    });
-    return rows.map(toGoalDetail);
+  async list(filter: GoalListFilter): Promise<import("../domain/repositories/IPerformanceRepository").GoalListResult> {
+    const where = {
+      employeeId: filter.employeeId,
+      departmentId: filter.departmentId,
+      level: filter.level,
+      status: filter.status,
+      parentGoalId: filter.parentGoalId,
+      ...(filter.employeeIds
+        ? {
+            OR: [{ employeeId: { in: [...filter.employeeIds] } }, { employeeId: null }],
+          }
+        : {}),
+    };
+    const [total, rows] = await Promise.all([
+      this.prisma.goal.count({ where }),
+      this.prisma.goal.findMany({
+        where,
+        include: { keyResults: true },
+        orderBy: { createdAt: "desc" },
+        skip: filter.pagination.skip,
+        take: filter.pagination.take,
+      }),
+    ]);
+    return { total, items: rows.map(toGoalDetail) };
   }
 }
 

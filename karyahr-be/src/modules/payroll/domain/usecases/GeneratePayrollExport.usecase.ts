@@ -123,10 +123,17 @@ export class GeneratePayrollExportUseCase {
   }
 
   private async bankCsv(slips: readonly Payslip[]): Promise<string> {
+    const employeeIds = [...new Set(slips.map((slip) => slip.employeeId))];
+    const [employees, profiles] = await Promise.all([
+      this.employees.findByIds(employeeIds),
+      this.profiles.findByEmployeeIds(employeeIds),
+    ]);
+    const employeeById = new Map(employees.map((item) => [item.id, item]));
+    const profileByEmployeeId = new Map(profiles.map((item) => [item.employeeId, item]));
     const rows: string[][] = [];
     for (const slip of slips) {
-      const employee = await this.employees.findById(slip.employeeId);
-      const profile = await this.profiles.findByEmployeeId(slip.employeeId);
+      const employee = employeeById.get(slip.employeeId);
+      const profile = profileByEmployeeId.get(slip.employeeId);
       rows.push([
         profile?.bankAccountNumber ?? "",
         profile?.bankAccountName ?? employee?.fullName ?? "",

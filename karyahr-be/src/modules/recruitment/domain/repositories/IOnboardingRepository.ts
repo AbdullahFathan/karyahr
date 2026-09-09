@@ -1,3 +1,4 @@
+import type { PaginationParams } from "../../../../shared/utils/pagination";
 import type {
   OnboardingAssigneeKind,
   OnboardingDashboardRow,
@@ -47,5 +48,7 @@ export type IOnboardingProcessRepository = {
   findTaskById(taskId: string): Promise<OnboardingProcess | null>;
   completeTask(taskId: string, completedAt: Date): Promise<OnboardingProcess>;
   markCompleted(processId: string): Promise<OnboardingProcess>;
-  listDashboard(): Promise<readonly OnboardingDashboardRow[]>;
+  listDashboard(
+    pagination: PaginationParams,
+  ): Promise<{ readonly items: readonly OnboardingDashboardRow[]; readonly total: number }>;
 };

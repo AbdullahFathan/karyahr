@@ -56,7 +56,7 @@ class MemoryEmployees implements IEmployeeRepository {
     return { items: [this.employee], total: 1 };
   }
   async listDirectory() {
-    return [this.employee];
+    return { items: [this.employee], total: 1 };
   }
 }
 

@@ -1,3 +1,4 @@
+import type { PaginationParams } from "../../../../shared/utils/pagination";
 import type {
   Goal,
   GoalDetail,
@@ -49,6 +50,12 @@ export type GoalListFilter = {
   readonly level?: GoalLevel;
   readonly status?: GoalStatus;
   readonly parentGoalId?: string;
+  readonly pagination: PaginationParams;
+};
+
+export type GoalListResult = {
+  readonly items: readonly GoalDetail[];
+  readonly total: number;
 };
 
 export type IGoalRepository = {
@@ -65,7 +72,7 @@ export type IGoalRepository = {
     progressPercent: number,
   ): Promise<GoalDetail>;
   findById(id: string): Promise<GoalDetail | null>;
-  list(filter: GoalListFilter): Promise<readonly GoalDetail[]>;
+  list(filter: GoalListFilter): Promise<GoalListResult>;
 };
 
 export type CreateCycleInput = {

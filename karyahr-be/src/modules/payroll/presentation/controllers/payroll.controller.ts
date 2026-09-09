@@ -3,6 +3,7 @@ import { PERMISSIONS } from "../../../../shared/auth/permissions";
 import { UnauthorizedError } from "../../../../shared/errors/app-error";
 import { asyncHandler } from "../../../../shared/middleware/async-handler";
 import { parseWorkDate } from "../../../../shared/utils/jakarta-time";
+import { parsePagination, paginationMeta } from "../../../../shared/utils/pagination";
 import { routeParam } from "../../../../shared/utils/route-param";
 import type {
   CreateSalaryComponentUseCase,
@@ -33,6 +34,7 @@ import {
   createPayrollRunSchema,
   createSalaryComponentSchema,
   exportYearQuerySchema,
+  paginationQuerySchema,
   payslipRangeQuerySchema,
   updateSalaryComponentSchema,
   upsertPayrollProfileSchema,
@@ -139,8 +141,14 @@ export function createPayrollController(deps: {
     res.status(202).json({ data: serializePayroll(run) });
   });
 
-  const listRuns = asyncHandler(async (_req: Request, res: Response) => {
-    res.status(200).json({ data: serializePayroll(await deps.listRuns.execute()) });
+  const listRuns = asyncHandler(async (req: Request, res: Response) => {
+    const query = paginationQuerySchema.parse(req.query);
+    const pagination = parsePagination(query);
+    const result = await deps.listRuns.execute(pagination);
+    res.status(200).json({
+      data: serializePayroll(result.items),
+      meta: paginationMeta(result.total, pagination.page, pagination.pageSize),
+    });
   });
 
   const getRun = asyncHandler(async (req: Request, res: Response) => {
@@ -149,18 +157,28 @@ export function createPayrollController(deps: {
   });
 
   const listRunPayslips = asyncHandler(async (req: Request, res: Response) => {
-    const items = await deps.listRunPayslips.execute(routeParam(req.params.id, "id"));
-    res.status(200).json({ data: serializePayroll(items) });
+    const query = paginationQuerySchema.parse(req.query);
+    const pagination = parsePagination(query);
+    const result = await deps.listRunPayslips.execute(routeParam(req.params.id, "id"), pagination);
+    res.status(200).json({
+      data: serializePayroll(result.items),
+      meta: paginationMeta(result.total, pagination.page, pagination.pageSize),
+    });
   });
 
   const listMyPayslips = asyncHandler(async (req: Request, res: Response) => {
     const query = payslipRangeQuerySchema.parse(req.query);
-    const items = await deps.listMyPayslips.execute(
+    const pagination = parsePagination(query);
+    const result = await deps.listMyPayslips.execute(
       actor(req).employeeId,
+      pagination,
       query.from ? parseWorkDate(query.from) : undefined,
       query.to ? parseWorkDate(query.to) : undefined,
     );
-    res.status(200).json({ data: serializePayroll(items) });
+    res.status(200).json({
+      data: serializePayroll(result.items),
+      meta: paginationMeta(result.total, pagination.page, pagination.pageSize),
+    });
   });
 
   const getPayslip = asyncHandler(async (req: Request, res: Response) => {

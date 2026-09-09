@@ -130,8 +130,12 @@ export class PrismaPositionRepository implements IPositionRepository {
 export class PrismaOrgTreeReader implements IOrgTreeReader {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async listEmployeesForTree(): Promise<readonly OrgTreeEmployee[]> {
+  async listEmployeesForTree(departmentIds?: readonly string[]): Promise<readonly OrgTreeEmployee[]> {
+    if (departmentIds && departmentIds.length === 0) {
+      return [];
+    }
     const rows = await this.prisma.employee.findMany({
+      where: departmentIds ? { departmentId: { in: [...departmentIds] } } : undefined,
       include: { position: true },
       orderBy: { fullName: "asc" },
     });

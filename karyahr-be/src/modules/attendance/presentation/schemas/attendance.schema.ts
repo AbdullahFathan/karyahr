@@ -26,6 +26,12 @@ export const attendanceRangeQuerySchema = z.object({
   to: dateKey,
 });
 
+export const attendanceDashboardQuerySchema = z.object({
+  departmentId: z.string().min(1).optional(),
+  page: z.coerce.number().int().positive().optional(),
+  pageSize: z.coerce.number().int().positive().optional(),
+});
+
 export const attendanceSummaryQuerySchema = z.object({
   employeeId: z.string().min(1).optional(),
   period: z.enum(["day", "week", "month"]).default("month"),
@@ -37,4 +43,5 @@ export type CreateShiftDto = z.infer<typeof createShiftSchema>;
 export type UpdateShiftDto = z.infer<typeof updateShiftSchema>;
 export type AssignShiftDto = z.infer<typeof assignShiftSchema>;
 export type AttendanceRangeQueryDto = z.infer<typeof attendanceRangeQuerySchema>;
+export type AttendanceDashboardQueryDto = z.infer<typeof attendanceDashboardQuerySchema>;
 export type AttendanceSummaryQueryDto = z.infer<typeof attendanceSummaryQuerySchema>;

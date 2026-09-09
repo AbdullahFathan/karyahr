@@ -124,8 +124,8 @@ class MemoryGoals implements IGoalRepository {
     return this.items.find((item) => item.id === id) ?? null;
   }
 
-  async list(filter: GoalListFilter): Promise<readonly GoalDetail[]> {
-    return this.items.filter((item) => {
+  async list(filter: GoalListFilter) {
+    const items = this.items.filter((item) => {
       if (filter.employeeId && item.employeeId !== filter.employeeId) {
         return false;
       }
@@ -137,6 +137,10 @@ class MemoryGoals implements IGoalRepository {
       }
       return true;
     });
+    const page = filter.pagination
+      ? items.slice(filter.pagination.skip, filter.pagination.skip + filter.pagination.take)
+      : items;
+    return { items: page, total: items.length };
   }
 }
 
@@ -161,7 +165,7 @@ class MemoryEmployees implements IEmployeeRepository {
     return { items: this.items, total: this.items.length };
   }
   async listDirectory(filter: { managerId?: string; statuses?: readonly Employee["status"][] }) {
-    return this.items.filter((item) => {
+    const items = this.items.filter((item) => {
       if (filter.managerId !== undefined && item.managerId !== filter.managerId) {
         return false;
       }
@@ -170,6 +174,7 @@ class MemoryEmployees implements IEmployeeRepository {
       }
       return true;
     });
+    return { items, total: items.length };
   }
 }
 

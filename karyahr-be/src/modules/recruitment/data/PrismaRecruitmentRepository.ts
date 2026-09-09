@@ -344,13 +344,22 @@ export class PrismaApplicationRepository implements IApplicationRepository {
       : null;
   }
 
-  async listByJob(jobPostingId: string): Promise<readonly ApplicationDetail[]> {
-    const rows = await this.prisma.application.findMany({
-      where: { jobPostingId },
-      include: applicationInclude,
-      orderBy: { createdAt: "asc" },
-    });
-    return rows.map(toApplicationDetail);
+  async listByJob(
+    jobPostingId: string,
+    pagination: import("../../../shared/utils/pagination").PaginationParams,
+  ): Promise<{ readonly items: readonly ApplicationDetail[]; readonly total: number }> {
+    const where = { jobPostingId };
+    const [total, rows] = await Promise.all([
+      this.prisma.application.count({ where }),
+      this.prisma.application.findMany({
+        where,
+        include: applicationInclude,
+        orderBy: { createdAt: "asc" },
+        skip: pagination.skip,
+        take: pagination.take,
+      }),
+    ]);
+    return { total, items: rows.map(toApplicationDetail) };
   }
 
   async updateStage(id: string, stageId: string): Promise<ApplicationDetail> {

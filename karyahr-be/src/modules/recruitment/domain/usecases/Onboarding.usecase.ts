@@ -219,7 +219,7 @@ export class CompleteOnboardingTaskUseCase {
 export class ListOnboardingDashboardUseCase {
   constructor(private readonly processes: IOnboardingProcessRepository) {}
 
-  execute(): Promise<readonly OnboardingDashboardRow[]> {
-    return this.processes.listDashboard();
+  execute(pagination: import("../../../../shared/utils/pagination").PaginationParams) {
+    return this.processes.listDashboard(pagination);
   }
 }

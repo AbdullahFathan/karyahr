@@ -34,6 +34,11 @@ export const reviewLeaveSchema = z.object({
   comment: z.string().min(1).nullable().optional(),
 });
 
+export const paginationQuerySchema = z.object({
+  page: z.coerce.number().int().positive().optional(),
+  pageSize: z.coerce.number().int().positive().optional(),
+});
+
 export type CreateLeaveTypeDto = z.infer<typeof createLeaveTypeSchema>;
 export type UpdateLeaveTypeDto = z.infer<typeof updateLeaveTypeSchema>;
 export type CreateLeavePolicyDto = z.infer<typeof createLeavePolicySchema>;

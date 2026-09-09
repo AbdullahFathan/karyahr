@@ -3,6 +3,7 @@ import { asyncHandler } from "../../../../shared/middleware/async-handler";
 import { UnauthorizedError, ValidationError } from "../../../../shared/errors/app-error";
 import { PERMISSIONS } from "../../../../shared/auth/permissions";
 import { routeParam } from "../../../../shared/utils/route-param";
+import { parsePagination } from "../../../../shared/utils/pagination";
 import { parseWorkDate } from "../../domain/jakarta-time";
 import type {
   ExportAttendanceCsvUseCase,
@@ -23,6 +24,7 @@ import type {
 } from "../../domain/usecases/Shift.usecase";
 import {
   assignShiftSchema,
+  attendanceDashboardQuerySchema,
   attendanceRangeQuerySchema,
   attendanceSummaryQuerySchema,
   createShiftSchema,
@@ -136,8 +138,13 @@ export function createAttendanceController(deps: {
   });
 
   const dashboard = asyncHandler(async (req: Request, res: Response) => {
-    const item = await deps.dashboard.execute(scopeFrom(req));
-    res.status(200).json({ data: item });
+    const query = attendanceDashboardQuerySchema.parse(req.query);
+    const pagination = parsePagination(query);
+    const item = await deps.dashboard.execute(scopeFrom(req), {
+      pagination,
+      departmentId: query.departmentId,
+    });
+    res.status(200).json({ data: item, meta: item.meta });
   });
 
   const exportCsv = asyncHandler(async (req: Request, res: Response) => {

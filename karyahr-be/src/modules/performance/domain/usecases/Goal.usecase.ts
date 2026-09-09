@@ -484,15 +484,16 @@ export class ListGoalsUseCase {
       readonly status?: GoalStatus;
       readonly parentGoalId?: string;
       readonly mine?: boolean;
+      readonly pagination: import("../../../../shared/utils/pagination").PaginationParams;
     },
-  ): Promise<readonly GoalDetail[]> {
+  ) {
     const reports = has(actor, PERMISSIONS.PERFORMANCE_GOALS_READ)
-      ? await this.employees.listDirectory({ managerId: actor.employeeId })
+      ? (await this.employees.listDirectory({ managerId: actor.employeeId })).items
       : [];
     const reportIds = new Set(reports.map((item) => item.id));
 
     if (filter.mine) {
-      return this.goals.list({ employeeId: actor.employeeId });
+      return this.goals.list({ employeeId: actor.employeeId, pagination: filter.pagination });
     }
 
     if (isHr(actor) || has(actor, PERMISSIONS.PERFORMANCE_GOALS_WRITE)) {
@@ -502,10 +503,11 @@ export class ListGoalsUseCase {
         level: filter.level,
         status: filter.status,
         parentGoalId: filter.parentGoalId,
+        pagination: filter.pagination,
       });
     }
 
-    const items = await this.goals.list({
+    const result = await this.goals.list({
       employeeId: filter.employeeId,
       employeeIds:
         filter.employeeId || filter.mine
@@ -517,8 +519,12 @@ export class ListGoalsUseCase {
       level: filter.level,
       status: filter.status,
       parentGoalId: filter.parentGoalId,
+      pagination: filter.pagination,
     });
-    return items.filter((item) => canReadGoal(actor, item, reportIds));
+    return {
+      total: result.total,
+      items: result.items.filter((item) => canReadGoal(actor, item, reportIds)),
+    };
   }
 }
 
@@ -537,7 +543,7 @@ export class GetGoalUseCase {
       throw new NotFoundError("Goal not found");
     }
     const reports = has(actor, PERMISSIONS.PERFORMANCE_GOALS_READ)
-      ? await this.employees.listDirectory({ managerId: actor.employeeId })
+      ? (await this.employees.listDirectory({ managerId: actor.employeeId })).items
       : [];
     if (!canReadGoal(actor, goal, new Set(reports.map((item) => item.id)))) {
       throw new ForbiddenError("Not allowed to view this goal");

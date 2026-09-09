@@ -15,8 +15,11 @@ import type {
 export class ListApplicationsUseCase {
   constructor(private readonly applications: IApplicationRepository) {}
 
-  execute(jobPostingId: string) {
-    return this.applications.listByJob(jobPostingId);
+  execute(
+    jobPostingId: string,
+    pagination: import("../../../../shared/utils/pagination").PaginationParams,
+  ) {
+    return this.applications.listByJob(jobPostingId, pagination);
   }
 }
 

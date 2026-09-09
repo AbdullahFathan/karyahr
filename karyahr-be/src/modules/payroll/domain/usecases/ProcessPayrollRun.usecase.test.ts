@@ -282,7 +282,10 @@ class MemoryHrEmployees implements IEmployeeRepository {
   async list(): Promise<{ items: readonly Employee[]; total: number }> {
     return { items: [], total: 0 };
   }
-  async listDirectory(): Promise<readonly Employee[]> {
+  async listDirectory(): Promise<{ items: readonly Employee[]; total: number }> {
+    return { items: [], total: 0 };
+  }
+  async findByIds(): Promise<readonly Employee[]> {
     return [];
   }
 }

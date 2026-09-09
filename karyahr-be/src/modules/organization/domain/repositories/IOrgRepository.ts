@@ -51,5 +51,5 @@ export type IPositionRepository = {
 };
 
 export type IOrgTreeReader = {
-  listEmployeesForTree(): Promise<readonly OrgTreeEmployee[]>;
+  listEmployeesForTree(departmentIds?: readonly string[]): Promise<readonly OrgTreeEmployee[]>;
 };

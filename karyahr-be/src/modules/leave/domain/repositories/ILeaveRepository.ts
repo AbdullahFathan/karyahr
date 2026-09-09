@@ -1,3 +1,4 @@
+import type { PaginationParams } from "../../../../shared/utils/pagination";
 import type {
   LeaveApproval,
   LeaveAttachment,
@@ -7,6 +8,11 @@ import type {
   LeaveRequestDetail,
   LeaveType,
 } from "../entities/Leave";
+
+export type LeaveListResult<T> = {
+  readonly items: readonly T[];
+  readonly total: number;
+};
 
 export type CreateLeaveTypeInput = Omit<LeaveType, "id">;
 export type UpdateLeaveTypeInput = Partial<Omit<LeaveType, "id" | "code">> & { readonly code?: string };
@@ -53,9 +59,15 @@ export type CreateLeaveRequestInput = Omit<LeaveRequest, "id">;
 export type ILeaveRequestRepository = {
   create(input: CreateLeaveRequestInput, approvals: readonly Omit<LeaveApproval, "id" | "requestId">[]): Promise<LeaveRequestDetail>;
   findById(id: string): Promise<LeaveRequestDetail | null>;
-  listByEmployee(employeeId: string): Promise<readonly LeaveRequest[]>;
-  listPending(): Promise<readonly LeaveRequest[]>;
-  listPendingForApprover(approverEmployeeId: string): Promise<readonly LeaveRequest[]>;
+  listByEmployee(
+    employeeId: string,
+    pagination: PaginationParams,
+  ): Promise<LeaveListResult<LeaveRequest>>;
+  listPending(pagination: PaginationParams): Promise<LeaveListResult<LeaveRequest>>;
+  listPendingForApprover(
+    approverEmployeeId: string,
+    pagination: PaginationParams,
+  ): Promise<LeaveListResult<LeaveRequest>>;
   updateStatus(
     id: string,
     input: { readonly status: LeaveRequest["status"]; readonly currentStep: number },

@@ -1,7 +1,12 @@
 import { ForbiddenError, NotFoundError } from "../../../../shared/errors/app-error";
 import type { IObjectStorage } from "../../../../shared/storage/IObjectStorage";
+import type { PaginationParams } from "../../../../shared/utils/pagination";
 import type { Payslip } from "../entities/Payroll";
-import type { IPayrollRunRepository, IPayslipRepository } from "../repositories/IPayrollRepository";
+import type {
+  IPayrollRunRepository,
+  IPayslipRepository,
+  PayrollListResult,
+} from "../repositories/IPayrollRepository";
 
 /**
  * Lists the current employee's payslips, optionally filtered by period.
@@ -9,8 +14,13 @@ import type { IPayrollRunRepository, IPayslipRepository } from "../repositories/
 export class ListMyPayslipsUseCase {
   constructor(private readonly payslips: IPayslipRepository) {}
 
-  execute(employeeId: string, from?: Date, to?: Date): Promise<readonly Payslip[]> {
-    return this.payslips.listByEmployee(employeeId, from, to);
+  execute(
+    employeeId: string,
+    pagination: PaginationParams,
+    from?: Date,
+    to?: Date,
+  ): Promise<PayrollListResult<Payslip>> {
+    return this.payslips.listByEmployeePage(employeeId, pagination, from, to);
   }
 }
 
@@ -44,12 +54,15 @@ export class ListRunPayslipsUseCase {
     private readonly payslips: IPayslipRepository,
   ) {}
 
-  async execute(payrollRunId: string): Promise<readonly Payslip[]> {
+  async execute(
+    payrollRunId: string,
+    pagination: PaginationParams,
+  ): Promise<PayrollListResult<Payslip>> {
     const run = await this.runs.findById(payrollRunId);
     if (!run) {
       throw new NotFoundError("Payroll run not found");
     }
-    return this.payslips.listByRun(payrollRunId);
+    return this.payslips.listByRunPage(payrollRunId, pagination);
   }
 }
 

@@ -358,6 +358,7 @@ model Employee {
   @@index([positionId])
   @@index([managerId])
   @@index([status])
+  @@index([status, fullName])
   @@map("employees")
 }
 
@@ -579,6 +580,7 @@ model LeaveRequest {
   @@index([employeeId, status])
   @@index([leaveTypeId])
   @@index([startDate, endDate])
+  @@index([status, createdAt])
   @@map("leave_requests")
 }
 
@@ -721,6 +723,7 @@ model PayrollRun {
 
   @@index([status])
   @@index([periodStart, periodEnd])
+  @@index([createdAt])
   @@map("payroll_runs")
 }
 
@@ -783,6 +786,7 @@ model JobPosting {
   @@index([status])
   @@index([departmentId])
   @@index([positionId])
+  @@index([status, createdAt])
   @@map("job_postings")
 }
 
@@ -838,6 +842,7 @@ model Application {
   @@index([jobPostingId, status])
   @@index([stageId])
   @@index([candidateId])
+  @@index([jobPostingId, createdAt])
   @@map("applications")
 }
 
@@ -918,6 +923,7 @@ model OnboardingProcess {
   template OnboardingTemplate @relation(fields: [templateId], references: [id])
   tasks    OnboardingTask[]
 
+  @@index([status, createdAt])
   @@map("onboarding_processes")
 }
 

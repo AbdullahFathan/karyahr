@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { asyncHandler } from "../../../../shared/middleware/async-handler";
 import { UnauthorizedError } from "../../../../shared/errors/app-error";
 import { routeParam } from "../../../../shared/utils/route-param";
+import { parsePagination, paginationMeta } from "../../../../shared/utils/pagination";
 import type {
   ApproveGoalUseCase,
   CloseGoalUseCase,
@@ -130,10 +131,21 @@ export function createPerformanceController(deps: {
     }),
     listGoals: asyncHandler(async (req: Request, res: Response) => {
       const query = listGoalsQuerySchema.parse(req.query);
-      res.status(200).json({ data: await deps.listGoals.execute(actor(req), query) });
+      const pagination = parsePagination(query);
+      const result = await deps.listGoals.execute(actor(req), { ...query, pagination });
+      res.status(200).json({
+        data: result.items,
+        meta: paginationMeta(result.total, pagination.page, pagination.pageSize),
+      });
     }),
     listMyGoals: asyncHandler(async (req: Request, res: Response) => {
-      res.status(200).json({ data: await deps.listGoals.execute(actor(req), { mine: true }) });
+      const query = listGoalsQuerySchema.parse(req.query);
+      const pagination = parsePagination(query);
+      const result = await deps.listGoals.execute(actor(req), { mine: true, pagination });
+      res.status(200).json({
+        data: result.items,
+        meta: paginationMeta(result.total, pagination.page, pagination.pageSize),
+      });
     }),
     getGoal: asyncHandler(async (req: Request, res: Response) => {
       const item = await deps.getGoal.execute(actor(req), routeParam(req.params.id, "id"));

@@ -28,7 +28,12 @@ export const updatePositionSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
+export const orgTreeQuerySchema = z.object({
+  departmentId: z.string().min(1).optional(),
+});
+
 export type CreateDepartmentDto = z.infer<typeof createDepartmentSchema>;
 export type UpdateDepartmentDto = z.infer<typeof updateDepartmentSchema>;
 export type CreatePositionDto = z.infer<typeof createPositionSchema>;
 export type UpdatePositionDto = z.infer<typeof updatePositionSchema>;
+export type OrgTreeQueryDto = z.infer<typeof orgTreeQuerySchema>;

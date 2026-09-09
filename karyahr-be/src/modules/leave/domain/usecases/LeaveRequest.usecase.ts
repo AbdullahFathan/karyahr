@@ -238,8 +238,11 @@ export class CreateLeaveRequestUseCase {
 export class ListMyLeaveRequestsUseCase {
   constructor(private readonly requests: ILeaveRequestRepository) {}
 
-  execute(employeeId: string): Promise<readonly LeaveRequestDetail["request"][]> {
-    return this.requests.listByEmployee(employeeId);
+  execute(
+    employeeId: string,
+    pagination: import("../../../../shared/utils/pagination").PaginationParams,
+  ) {
+    return this.requests.listByEmployee(employeeId, pagination);
   }
 }
 
@@ -249,11 +252,14 @@ export class ListMyLeaveRequestsUseCase {
 export class ListLeaveInboxUseCase {
   constructor(private readonly requests: ILeaveRequestRepository) {}
 
-  execute(actor: LeaveActor): Promise<readonly LeaveRequestDetail["request"][]> {
+  execute(
+    actor: LeaveActor,
+    pagination: import("../../../../shared/utils/pagination").PaginationParams,
+  ) {
     if (actor.isHr) {
-      return this.requests.listPending();
+      return this.requests.listPending(pagination);
     }
-    return this.requests.listPendingForApprover(actor.employeeId);
+    return this.requests.listPendingForApprover(actor.employeeId, pagination);
   }
 }
 

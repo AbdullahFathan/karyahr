@@ -1,5 +1,6 @@
 import { NotFoundError, ValidationError } from "../../../../shared/errors/app-error";
 import type { IAuditLogRepository } from "../../../../shared/audit/IAuditLogRepository";
+import type { PaginationParams } from "../../../../shared/utils/pagination";
 import type { PayrollPeriodType, PayrollRun } from "../entities/Payroll";
 import type { IPayrollJobQueue, IPayrollRunRepository } from "../repositories/IPayrollRepository";
 
@@ -62,7 +63,7 @@ export class GetPayrollRunUseCase {
 export class ListPayrollRunsUseCase {
   constructor(private readonly runs: IPayrollRunRepository) {}
 
-  execute(): Promise<readonly PayrollRun[]> {
-    return this.runs.list();
+  execute(pagination: PaginationParams) {
+    return this.runs.list(pagination);
   }
 }
