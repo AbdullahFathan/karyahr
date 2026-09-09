@@ -12,6 +12,7 @@ import { createLeaveRouter } from "./modules/leave/presentation/routes/leave.rou
 import { createNotificationRouter } from "./modules/notifications/presentation/routes/notifications.routes";
 import { createOrgRouter } from "./modules/organization/presentation/routes/org.routes";
 import { createPayrollRouter } from "./modules/payroll/presentation/routes/payroll.routes";
+import { createRecruitmentRouter } from "./modules/recruitment/presentation/routes/recruitment.routes";
 import { createSystemRouter } from "./modules/system/presentation/routes/system.routes";
 import { health, ready } from "./shared/health/health.controller";
 import { cookieParser } from "./shared/middleware/cookie-parser";
@@ -59,6 +60,7 @@ export function createApp(): Express {
   app.use(createLeaveRouter());
   app.use(createNotificationRouter());
   app.use(createPayrollRouter());
+  app.use(createRecruitmentRouter());
 
   app.use(notFoundHandler);
   app.use(errorHandler);

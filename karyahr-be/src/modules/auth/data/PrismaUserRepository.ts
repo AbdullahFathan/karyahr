@@ -1,6 +1,7 @@
 import type { Prisma, PrismaClient } from "../../../../prisma/generated/prisma/client";
+import { NotFoundError } from "../../../shared/errors/app-error";
 import type { AuthUser } from "../domain/entities/AuthUser";
-import type { IUserRepository } from "../domain/repositories/IUserRepository";
+import type { CreateUserInput, IUserRepository } from "../domain/repositories/IUserRepository";
 
 const userInclude = {
   roles: {
@@ -81,5 +82,23 @@ export class PrismaUserRepository implements IUserRepository {
       where: { employeeId },
       data: { isActive },
     });
+  }
+
+  async create(input: CreateUserInput): Promise<AuthUser> {
+    const role = await this.prisma.role.findUnique({ where: { name: input.roleName } });
+    if (!role) {
+      throw new NotFoundError(`Role ${input.roleName} not found`);
+    }
+    const user = await this.prisma.user.create({
+      data: {
+        email: input.email,
+        passwordHash: input.passwordHash,
+        employeeId: input.employeeId,
+        isActive: true,
+        roles: { create: { roleId: role.id } },
+      },
+      include: userInclude,
+    });
+    return toAuthUser(user);
   }
 }

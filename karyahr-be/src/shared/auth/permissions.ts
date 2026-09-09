@@ -34,6 +34,15 @@ export const PERMISSIONS = {
   PAYROLL_RUNS_READ: "payroll:runs:read",
   PAYSLIPS_ME: "payslips:me",
   PAYROLL_EXPORT: "payroll:export",
+  RECRUITMENT_JOBS_READ: "recruitment:jobs:read",
+  RECRUITMENT_JOBS_WRITE: "recruitment:jobs:write",
+  RECRUITMENT_APPLICATIONS_READ: "recruitment:applications:read",
+  RECRUITMENT_APPLICATIONS_WRITE: "recruitment:applications:write",
+  RECRUITMENT_HIRE: "recruitment:hire",
+  ONBOARDING_TEMPLATES_WRITE: "onboarding:templates:write",
+  ONBOARDING_READ: "onboarding:read",
+  ONBOARDING_TASKS_COMPLETE: "onboarding:tasks:complete",
+  ONBOARDING_ME: "onboarding:me",
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -52,14 +61,29 @@ export const EMPLOYEE_ROLE_PERMISSIONS: readonly PermissionKey[] = [
   PERMISSIONS.LEAVE_REQUESTS_ME,
   PERMISSIONS.NOTIFICATIONS_ME,
   PERMISSIONS.PAYSLIPS_ME,
+  PERMISSIONS.ONBOARDING_ME,
+  PERMISSIONS.ONBOARDING_TASKS_COMPLETE,
 ];
 
 export const MANAGER_ROLE_PERMISSIONS: readonly PermissionKey[] = [
   ...EMPLOYEE_ROLE_PERMISSIONS,
   PERMISSIONS.ATTENDANCE_DASHBOARD,
   PERMISSIONS.LEAVE_REQUESTS_APPROVE,
+  PERMISSIONS.ONBOARDING_READ,
+];
+
+export const RECRUITER_ROLE_PERMISSIONS: readonly PermissionKey[] = [
+  PERMISSIONS.AUTH_ME,
+  PERMISSIONS.NOTIFICATIONS_ME,
+  PERMISSIONS.RECRUITMENT_JOBS_READ,
+  PERMISSIONS.RECRUITMENT_JOBS_WRITE,
+  PERMISSIONS.RECRUITMENT_APPLICATIONS_READ,
+  PERMISSIONS.RECRUITMENT_APPLICATIONS_WRITE,
+  PERMISSIONS.ONBOARDING_READ,
+  PERMISSIONS.ONBOARDING_TASKS_COMPLETE,
 ];
 
 export const HR_ADMIN_ROLE = "hr_admin";
 export const EMPLOYEE_ROLE = "employee";
 export const MANAGER_ROLE = "manager";
+export const RECRUITER_ROLE = "recruiter";

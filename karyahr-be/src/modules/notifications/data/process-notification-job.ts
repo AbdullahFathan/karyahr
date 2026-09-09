@@ -12,10 +12,12 @@ function isNotificationEvent(data: unknown): data is NotificationEvent {
     return false;
   }
   const record = data as Record<string, unknown>;
+  const hasRecipient =
+    typeof record.recipientUserId === "string" || typeof record.recipientEmail === "string";
   return (
     typeof record.type === "string" &&
     (NOTIFICATION_JOB_TYPES as readonly string[]).includes(record.type) &&
-    typeof record.recipientUserId === "string" &&
+    hasRecipient &&
     typeof record.title === "string" &&
     typeof record.body === "string" &&
     typeof record.entityType === "string" &&
@@ -24,7 +26,7 @@ function isNotificationEvent(data: unknown): data is NotificationEvent {
 }
 
 /**
- * Persists an in-app notification and sends email (or skips when SMTP is unset).
+ * Persists an in-app notification when a user is targeted and sends email.
  */
 export async function processNotificationJob(job: Job): Promise<void> {
   if (!isNotificationEvent(job.data)) {
@@ -34,23 +36,44 @@ export async function processNotificationJob(job: Job): Promise<void> {
   const prisma = getPrisma();
   const notifications = new PrismaNotificationRepository(prisma);
   const users = new PrismaUserRepository(prisma);
-  const created = await notifications.create(job.data);
-  const user = await users.findById(job.data.recipientUserId);
 
-  if (!user?.email) {
-    await notifications.updateEmailStatus(created.id, "SKIPPED");
+  let notificationId: string | null = null;
+  let emailTo = job.data.recipientEmail ?? null;
+
+  if (job.data.recipientUserId) {
+    const created = await notifications.create({
+      recipientUserId: job.data.recipientUserId,
+      type: job.data.type,
+      title: job.data.title,
+      body: job.data.body,
+      entityType: job.data.entityType,
+      entityId: job.data.entityId,
+    });
+    notificationId = created.id;
+    const user = await users.findById(job.data.recipientUserId);
+    emailTo = emailTo ?? user?.email ?? null;
+  }
+
+  if (!emailTo) {
+    if (notificationId) {
+      await notifications.updateEmailStatus(notificationId, "SKIPPED");
+    }
     return;
   }
 
   try {
     await sendMail({
-      to: user.email,
+      to: emailTo,
       subject: job.data.title,
       text: job.data.body,
     });
-    await notifications.updateEmailStatus(created.id, getMailTransporter() ? "SENT" : "SKIPPED");
+    if (notificationId) {
+      await notifications.updateEmailStatus(notificationId, getMailTransporter() ? "SENT" : "SKIPPED");
+    }
   } catch {
-    await notifications.updateEmailStatus(created.id, "FAILED");
-    throw new Error(`Failed to send notification email ${created.id}`);
+    if (notificationId) {
+      await notifications.updateEmailStatus(notificationId, "FAILED");
+    }
+    throw new Error(`Failed to send notification email ${notificationId ?? job.id ?? "unknown"}`);
   }
 }

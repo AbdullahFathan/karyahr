@@ -33,6 +33,12 @@ class MemoryUsers implements IUserRepository {
     return this.record ? [this.record] : [];
   }
   async setActiveByEmployeeId(): Promise<void> {}
+  async create(): Promise<AuthUser> {
+    if (!this.record) {
+      throw new Error("no user");
+    }
+    return this.record;
+  }
 }
 
 class MemoryRefresh implements IRefreshTokenRepository {

@@ -132,6 +132,9 @@ class MemoryUsers implements IUserRepository {
     return this.items.filter((item) => item.roleNames.includes(roleName));
   }
   async setActiveByEmployeeId(): Promise<void> {}
+  async create(): Promise<AuthUser> {
+    return this.items[0]!;
+  }
 }
 
 class MemoryTypes implements ILeaveTypeRepository {

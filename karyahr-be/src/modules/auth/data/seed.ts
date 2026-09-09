@@ -7,6 +7,8 @@ import {
   HR_ADMIN_ROLE,
   MANAGER_ROLE,
   MANAGER_ROLE_PERMISSIONS,
+  RECRUITER_ROLE,
+  RECRUITER_ROLE_PERMISSIONS,
 } from "../../../shared/auth/permissions";
 
 /**
@@ -47,6 +49,11 @@ export async function seedAuth(prisma: PrismaClient): Promise<void> {
     update: {},
     create: { name: MANAGER_ROLE, description: "Team manager" },
   });
+  const recruiterRole = await prisma.role.upsert({
+    where: { name: RECRUITER_ROLE },
+    update: {},
+    create: { name: RECRUITER_ROLE, description: "Recruiter" },
+  });
 
   await prisma.rolePermission.deleteMany({ where: { roleId: hrAdmin.id } });
   await prisma.rolePermission.createMany({
@@ -75,6 +82,17 @@ export async function seedAuth(prisma: PrismaClient): Promise<void> {
         throw new Error(`Missing permission ${key}`);
       }
       return { roleId: managerRole.id, permissionId };
+    }),
+  });
+
+  await prisma.rolePermission.deleteMany({ where: { roleId: recruiterRole.id } });
+  await prisma.rolePermission.createMany({
+    data: RECRUITER_ROLE_PERMISSIONS.map((key) => {
+      const permissionId = byKey.get(key);
+      if (!permissionId) {
+        throw new Error(`Missing permission ${key}`);
+      }
+      return { roleId: recruiterRole.id, permissionId };
     }),
   });
 

@@ -5,6 +5,9 @@ export const NOTIFICATION_JOB_TYPES = [
   "leave.submitted",
   "leave.decided",
   "payroll.payslip_ready",
+  "recruitment.application_received",
+  "recruitment.stage_changed",
+  "recruitment.decision",
 ] as const;
 export type NotificationJobType = (typeof NOTIFICATION_JOB_TYPES)[number];
 
@@ -23,7 +26,8 @@ export type InAppNotification = {
 
 export type NotificationEvent = {
   readonly type: NotificationJobType;
-  readonly recipientUserId: string;
+  readonly recipientUserId?: string;
+  readonly recipientEmail?: string;
   readonly title: string;
   readonly body: string;
   readonly entityType: string;
