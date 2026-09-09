@@ -128,6 +128,51 @@ enum OnboardingProcessStatus {
   COMPLETED
 }
 
+enum GoalLevel {
+  COMPANY
+  DEPARTMENT
+  EMPLOYEE
+}
+
+enum GoalStatus {
+  DRAFT
+  PENDING_APPROVAL
+  ACTIVE
+  REJECTED
+  COMPLETED
+  CANCELLED
+}
+
+enum PerformancePeriodType {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum PerformanceCycleStatus {
+  DRAFT
+  OPEN
+  LOCKED
+}
+
+enum PerformanceReviewStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum PerformanceRaterType {
+  SELF
+  MANAGER
+  PEER
+}
+
+enum PerformanceRecommendation {
+  PROMOTION
+  DEVELOPMENT
+  PIP
+}
+
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -150,6 +195,7 @@ model User {
   jobPostingsCreated        JobPosting[]
   applicationNotes          ApplicationNote[]
   applicationAttachments    ApplicationAttachment[]
+  goalsCreated              Goal[]
 
   @@index([email])
   @@map("users")
@@ -235,6 +281,7 @@ model Department {
   mutationsTo   EmployeeMutation[]  @relation("MutationToDept")
   leavePolicies LeavePolicy[]
   jobPostings   JobPosting[]
+  goals         Goal[]
 
   @@index([parentId])
   @@map("departments")
@@ -302,6 +349,10 @@ model Employee {
   hiredApplications Application[]
   onboardingProcess OnboardingProcess?
   onboardingTasks   OnboardingTask[]   @relation("OnboardingAssignee")
+  goals             Goal[]
+  performanceReviews PerformanceReview[]
+  performanceRatings PerformanceRating[]
+  performancePeerOf  PerformancePeerAssignment[]
 
   @@index([departmentId])
   @@index([positionId])
@@ -888,4 +939,120 @@ model OnboardingTask {
   @@index([processId])
   @@index([assigneeEmployeeId])
   @@map("onboarding_tasks")
+}
+
+model Goal {
+  id             String     @id @default(cuid())
+  level          GoalLevel
+  parentGoalId   String?
+  departmentId   String?
+  employeeId     String?
+  ownerUserId    String
+  status         GoalStatus @default(DRAFT)
+  title          String
+  description    String
+  progressPercent Int       @default(0)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  parent     Goal?           @relation("GoalCascade", fields: [parentGoalId], references: [id])
+  children   Goal[]          @relation("GoalCascade")
+  department Department?     @relation(fields: [departmentId], references: [id])
+  employee   Employee?       @relation(fields: [employeeId], references: [id])
+  owner      User            @relation(fields: [ownerUserId], references: [id])
+  keyResults GoalKeyResult[]
+
+  @@index([parentGoalId])
+  @@index([departmentId])
+  @@index([employeeId, status])
+  @@index([level, status])
+  @@map("goals")
+}
+
+model GoalKeyResult {
+  id           String   @id @default(cuid())
+  goalId       String
+  title        String
+  targetValue  Float
+  currentValue Float    @default(0)
+  weight       Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId])
+  @@map("goal_key_results")
+}
+
+model PerformanceCycle {
+  id         String                  @id @default(cuid())
+  name       String
+  periodType PerformancePeriodType
+  startsAt   DateTime                @db.Date
+  endsAt     DateTime                @db.Date
+  status     PerformanceCycleStatus  @default(DRAFT)
+  createdAt  DateTime                @default(now())
+  updatedAt  DateTime                @updatedAt
+
+  reviews PerformanceReview[]
+
+  @@index([status])
+  @@index([startsAt, endsAt])
+  @@map("performance_cycles")
+}
+
+model PerformanceReview {
+  id             String                      @id @default(cuid())
+  cycleId        String
+  employeeId     String
+  status         PerformanceReviewStatus     @default(PENDING)
+  finalScore     Float?
+  recommendation PerformanceRecommendation?
+  createdAt      DateTime                    @default(now())
+  updatedAt      DateTime                    @updatedAt
+
+  cycle   PerformanceCycle              @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  employee Employee                     @relation(fields: [employeeId], references: [id])
+  peers    PerformancePeerAssignment[]
+  ratings  PerformanceRating[]
+
+  @@unique([cycleId, employeeId])
+  @@index([employeeId, status])
+  @@index([cycleId, status])
+  @@map("performance_reviews")
+}
+
+model PerformancePeerAssignment {
+  id             String   @id @default(cuid())
+  reviewId       String
+  peerEmployeeId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  review PerformanceReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  peer   Employee          @relation(fields: [peerEmployeeId], references: [id])
+
+  @@unique([reviewId, peerEmployeeId])
+  @@index([peerEmployeeId])
+  @@map("performance_peer_assignments")
+}
+
+model PerformanceRating {
+  id              String               @id @default(cuid())
+  reviewId        String
+  raterEmployeeId String
+  raterType       PerformanceRaterType
+  score           Int
+  comment         String
+  submittedAt     DateTime
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  review PerformanceReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  rater  Employee          @relation(fields: [raterEmployeeId], references: [id])
+
+  @@unique([reviewId, raterEmployeeId])
+  @@index([raterEmployeeId])
+  @@map("performance_ratings")
 }

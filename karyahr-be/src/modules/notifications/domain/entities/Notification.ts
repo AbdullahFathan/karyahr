@@ -8,6 +8,10 @@ export const NOTIFICATION_JOB_TYPES = [
   "recruitment.application_received",
   "recruitment.stage_changed",
   "recruitment.decision",
+  "performance.goal_submitted",
+  "performance.goal_decided",
+  "performance.review_opened",
+  "performance.rating_submitted",
 ] as const;
 export type NotificationJobType = (typeof NOTIFICATION_JOB_TYPES)[number];
 
