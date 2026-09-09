@@ -15,4 +15,5 @@ export type IRefreshTokenRepository = {
   }): Promise<RefreshTokenRecord>;
   findActiveByHash(tokenHash: string): Promise<RefreshTokenRecord | null>;
   revoke(id: string, revokedAt: Date): Promise<void>;
+  revokeAllForUser(userId: string, revokedAt: Date): Promise<void>;
 };

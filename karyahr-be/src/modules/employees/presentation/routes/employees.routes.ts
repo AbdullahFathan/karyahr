@@ -7,6 +7,7 @@ import { requireAuth } from "../../../../shared/middleware/require-auth";
 import { requirePermission } from "../../../../shared/middleware/require-permission";
 import { MinioObjectStorage } from "../../../../shared/storage/MinioObjectStorage";
 import { PrismaUserRepository } from "../../../auth/data/PrismaUserRepository";
+import { PrismaRefreshTokenRepository } from "../../../auth/data/PrismaRefreshTokenRepository";
 import { PERMISSIONS } from "../../../../shared/auth/permissions";
 import {
   PrismaEmployeeChangeRequestRepository,
@@ -26,6 +27,7 @@ import {
   ListEmployeesUseCase,
   UpdateEmployeeUseCase,
 } from "../../domain/usecases/EmployeeCrud.usecase";
+import { OffboardEmployeeUseCase } from "../../domain/usecases/OffboardEmployee.usecase";
 import {
   DeleteEmployeeDocumentUseCase,
   GetEmployeeDocumentFileUseCase,
@@ -48,6 +50,7 @@ export function createEmployeeRouter(): Router {
   const documents = new PrismaEmployeeDocumentRepository(prisma);
   const changeRequests = new PrismaEmployeeChangeRequestRepository(prisma);
   const users = new PrismaUserRepository(prisma);
+  const refreshTokens = new PrismaRefreshTokenRepository(prisma);
   const audit = new PrismaAuditLogRepository(prisma);
   const storage = new MinioObjectStorage();
   const maxBytes = env().MAX_UPLOAD_BYTES;
@@ -74,6 +77,7 @@ export function createEmployeeRouter(): Router {
     listMyChangeRequests: new ListMyChangeRequestsUseCase(changeRequests),
     approveChangeRequest: new ApproveChangeRequestUseCase(employees, changeRequests, audit),
     rejectChangeRequest: new RejectChangeRequestUseCase(changeRequests, audit),
+    offboardEmployee: new OffboardEmployeeUseCase(employees, users, refreshTokens, audit),
   });
 
   const router = Router();
@@ -130,6 +134,12 @@ export function createEmployeeRouter(): Router {
     requireAuth,
     requirePermission(PERMISSIONS.EMPLOYEES_WRITE),
     controller.update,
+  );
+  router.post(
+    "/employees/:id/offboard",
+    requireAuth,
+    requirePermission(PERMISSIONS.EMPLOYEES_WRITE),
+    controller.offboard,
   );
   router.post(
     "/employees/:id/mutations",

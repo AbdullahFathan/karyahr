@@ -58,6 +58,10 @@ export const reviewChangeRequestSchema = z.object({
   reviewNote: z.string().nullable().optional(),
 });
 
+export const offboardEmployeeSchema = z.object({
+  reason: z.string().min(1).optional(),
+});
+
 export const documentTypeSchema = z.enum(DOCUMENT_TYPES);
 
 export type CreateEmployeeDto = z.infer<typeof createEmployeeSchema>;
@@ -65,3 +69,4 @@ export type UpdateEmployeeDto = z.infer<typeof updateEmployeeSchema>;
 export type ListEmployeesQueryDto = z.infer<typeof listEmployeesQuerySchema>;
 export type CreateMutationDto = z.infer<typeof createMutationSchema>;
 export type CreateChangeRequestDto = z.infer<typeof createChangeRequestSchema>;
+export type OffboardEmployeeDto = z.infer<typeof offboardEmployeeSchema>;

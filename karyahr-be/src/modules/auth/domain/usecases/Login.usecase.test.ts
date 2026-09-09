@@ -65,6 +65,11 @@ class MemoryRefresh implements IRefreshTokenRepository {
   async revoke(id: string, revokedAt: Date): Promise<void> {
     this.rows = this.rows.map((row) => (row.id === id ? { ...row, revokedAt } : row));
   }
+  async revokeAllForUser(userId: string, revokedAt: Date): Promise<void> {
+    this.rows = this.rows.map((row) =>
+      row.userId === userId && row.revokedAt === null ? { ...row, revokedAt } : row,
+    );
+  }
 }
 
 const passwords: IPasswordHasher = {

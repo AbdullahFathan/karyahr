@@ -16,6 +16,7 @@ import type {
   ListEmployeesUseCase,
   UpdateEmployeeUseCase,
 } from "../../domain/usecases/EmployeeCrud.usecase";
+import type { OffboardEmployeeUseCase } from "../../domain/usecases/OffboardEmployee.usecase";
 import type {
   DeleteEmployeeDocumentUseCase,
   GetEmployeeDocumentFileUseCase,
@@ -32,6 +33,7 @@ import {
   createMutationSchema,
   documentTypeSchema,
   listEmployeesQuerySchema,
+  offboardEmployeeSchema,
   reviewChangeRequestSchema,
   updateEmployeeSchema,
 } from "../schemas/employee.schema";
@@ -62,6 +64,7 @@ export function createEmployeeController(deps: {
   readonly listMyChangeRequests: ListMyChangeRequestsUseCase;
   readonly approveChangeRequest: ApproveChangeRequestUseCase;
   readonly rejectChangeRequest: RejectChangeRequestUseCase;
+  readonly offboardEmployee: OffboardEmployeeUseCase;
 }) {
   const list = asyncHandler(async (req: Request, res: Response) => {
     const query = listEmployeesQuerySchema.parse(req.query);
@@ -100,6 +103,18 @@ export function createEmployeeController(deps: {
   const update = asyncHandler(async (req: Request, res: Response) => {
     const body = updateEmployeeSchema.parse(req.body);
     const employee = await deps.updateEmployee.execute(routeParam(req.params.id, "id"), body, actor(req).userId);
+    res.status(200).json(employee);
+  });
+
+  const offboard = asyncHandler(async (req: Request, res: Response) => {
+    const body = offboardEmployeeSchema.parse(req.body ?? {});
+    const currentActor = actor(req);
+    const employee = await deps.offboardEmployee.execute({
+      employeeId: routeParam(req.params.id, "id"),
+      actorUserId: currentActor.userId,
+      actorEmployeeId: currentActor.employeeId,
+      reason: body.reason,
+    });
     res.status(200).json(employee);
   });
 
@@ -200,6 +215,7 @@ export function createEmployeeController(deps: {
     getById,
     getMe,
     update,
+    offboard,
     createMutation,
     listMutations,
     uploadDocument,
