@@ -15,6 +15,8 @@ bun run dev
 
 `ENCRYPTION_KEY` is required (AES-256-GCM). Salary amounts, payroll PII, and MinIO object bodies are encrypted at rest. Legacy plaintext rows/objects dual-read until rewritten (re-seed or re-save to overwrite).
 
+In non-production (`NODE_ENV` is not `production`), OpenAPI is served at `/openapi.json` and Swagger UI at `/docs`.
+
 ## Scripts
 
 | Script | Purpose |

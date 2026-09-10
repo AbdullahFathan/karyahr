@@ -4,7 +4,7 @@ import type { Express } from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import pinoHttp from "pino-http";
-import { corsOrigins } from "./config/env";
+import { corsOrigins, env } from "./config/env";
 import { createAttendanceRouter } from "./modules/attendance/presentation/routes/attendance.routes";
 import { createAuthRouter } from "./modules/auth/presentation/routes/auth.routes";
 import { createEmployeeRouter } from "./modules/employees/presentation/routes/employees.routes";
@@ -18,6 +18,7 @@ import { createSystemRouter } from "./modules/system/presentation/routes/system.
 import { health, ready } from "./shared/health/health.controller";
 import { cookieParser } from "./shared/middleware/cookie-parser";
 import { errorHandler, getRequestId, notFoundHandler } from "./shared/middleware/error-handler";
+import { isOpenApiDocsPath, mountOpenApiDocs, shouldServeOpenApiDocs } from "./shared/openapi/mount-docs";
 import { logger } from "./shared/utils/logger";
 
 /**
@@ -39,7 +40,8 @@ export function createApp(): Express {
       limit: 100,
       standardHeaders: "draft-8",
       legacyHeaders: false,
-      skip: (req) => req.path === "/health" || req.path === "/ready",
+      skip: (req) =>
+        req.path === "/health" || req.path === "/ready" || isOpenApiDocsPath(req.path),
     }),
   );
   app.use(express.json());
@@ -51,6 +53,10 @@ export function createApp(): Express {
       customProps: (req) => ({ requestId: getRequestId(req) }),
     }),
   );
+
+  if (shouldServeOpenApiDocs(env().NODE_ENV)) {
+    mountOpenApiDocs(app);
+  }
 
   app.get("/health", health);
   app.get("/ready", ready);
