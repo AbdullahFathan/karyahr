@@ -1,5 +1,6 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
+import { env } from "../../../../config/env";
 import { PERMISSIONS } from "../../../../shared/auth/permissions";
 import { getPrisma } from "../../../../shared/database/prisma";
 import { requireAuth } from "../../../../shared/middleware/require-auth";
@@ -34,6 +35,7 @@ const loginLimiter = rateLimit({
   limit: 10,
   standardHeaders: "draft-8",
   legacyHeaders: false,
+  skip: () => env().NODE_ENV === "test" || process.env.SKIP_API_RATE_LIMIT === "1",
 });
 
 /**

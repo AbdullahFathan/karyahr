@@ -41,7 +41,11 @@ export function createApp(): Express {
       standardHeaders: "draft-8",
       legacyHeaders: false,
       skip: (req) =>
-        req.path === "/health" || req.path === "/ready" || isOpenApiDocsPath(req.path),
+        env().NODE_ENV === "test" ||
+        process.env.SKIP_API_RATE_LIMIT === "1" ||
+        req.path === "/health" ||
+        req.path === "/ready" ||
+        isOpenApiDocsPath(req.path),
     }),
   );
   app.use(express.json());
