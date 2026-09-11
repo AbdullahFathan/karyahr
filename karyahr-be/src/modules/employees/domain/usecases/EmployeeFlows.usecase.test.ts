@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { IAuditLogRepository } from "../../../../shared/audit/IAuditLogRepository";
 import { ForbiddenError, NotFoundError, ValidationError } from "../../../../shared/errors/app-error";
-import { requirePermission } from "../../../../shared/middleware/require-permission";
+import { requireAnyPermission, requirePermission } from "../../../../shared/middleware/require-permission";
 import type { Employee, EmployeeChangeRequest, EssPayload } from "../entities/Employee";
 import type {
   IEmployeeChangeRequestRepository,
@@ -225,6 +225,43 @@ describe("CreateEmployeeMutationUseCase", () => {
 describe("requirePermission", () => {
   test("denies callers without the permission", () => {
     const mw = requirePermission("employees:write");
+    let error: unknown;
+    mw(
+      { auth: { userId: "u1", employeeId: "e1", permissionKeys: ["auth:me"] } } as never,
+      {} as never,
+      (err?: unknown) => {
+        error = err;
+      },
+    );
+    expect(error).toBeInstanceOf(ForbiddenError);
+  });
+});
+
+describe("requireAnyPermission", () => {
+  test("allows callers who hold one of the listed permissions", () => {
+    const mw = requireAnyPermission("performance:goals:me", "performance:goals:write");
+    let error: unknown;
+    let called = false;
+    mw(
+      {
+        auth: {
+          userId: "u1",
+          employeeId: "e1",
+          permissionKeys: ["performance:goals:me"],
+        },
+      } as never,
+      {} as never,
+      (err?: unknown) => {
+        error = err;
+        called = err === undefined;
+      },
+    );
+    expect(error).toBeUndefined();
+    expect(called).toBe(true);
+  });
+
+  test("denies callers who hold none of the listed permissions", () => {
+    const mw = requireAnyPermission("performance:goals:me", "performance:goals:write");
     let error: unknown;
     mw(
       { auth: { userId: "u1", employeeId: "e1", permissionKeys: ["auth:me"] } } as never,

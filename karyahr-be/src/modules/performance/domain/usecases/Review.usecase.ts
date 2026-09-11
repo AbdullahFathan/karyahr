@@ -129,7 +129,7 @@ export class AssignPeersUseCase {
       throw new NotFoundError("Employee not found");
     }
     const isManager = subject.managerId === actor.employeeId;
-    if (!isManager && !isHr(actor) && !has(actor, PERMISSIONS.PERFORMANCE_REVIEWS_WRITE)) {
+    if (!isManager && !isHr(actor)) {
       throw new ForbiddenError("Not allowed to assign peers");
     }
     if (peerEmployeeIds.includes(review.employeeId)) {
@@ -262,7 +262,7 @@ export class CompleteReviewUseCase {
     }
     const subject = await this.employees.findById(review.employeeId);
     const isManager = subject?.managerId === actor.employeeId;
-    if (!isManager && !isHr(actor) && !has(actor, PERMISSIONS.PERFORMANCE_REVIEWS_WRITE)) {
+    if (!isManager && !isHr(actor)) {
       throw new ForbiddenError("Not allowed to complete this review");
     }
     const hasSelf = review.ratings.some((item) => item.raterType === "SELF");

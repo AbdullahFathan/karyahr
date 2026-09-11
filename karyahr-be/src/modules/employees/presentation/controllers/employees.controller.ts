@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Request, Response } from "express";
 import { asyncHandler } from "../../../../shared/middleware/async-handler";
 import { UnauthorizedError, ValidationError } from "../../../../shared/errors/app-error";
+import { attachmentContentDisposition } from "../../../../shared/utils/content-disposition";
 import { parsePagination, paginationMeta } from "../../../../shared/utils/pagination";
 import type { DocumentType } from "../../domain/entities/Employee";
 import type {
@@ -160,17 +161,21 @@ export function createEmployeeController(deps: {
   });
 
   const downloadDocument = asyncHandler(async (req: Request, res: Response) => {
-    const result = await deps.getDocumentFile.execute(routeParam(req.params.docId, "docId"));
-    res.setHeader("Content-Type", result.document.contentType);
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="${result.document.fileName}"`,
+    const result = await deps.getDocumentFile.execute(
+      routeParam(req.params.docId, "docId"),
+      routeParam(req.params.id, "id"),
     );
+    res.setHeader("Content-Type", result.document.contentType);
+    res.setHeader("Content-Disposition", attachmentContentDisposition(result.document.fileName));
     result.object.stream.pipe(res);
   });
 
   const deleteDocument = asyncHandler(async (req: Request, res: Response) => {
-    await deps.deleteDocument.execute(routeParam(req.params.docId, "docId"), actor(req).userId);
+    await deps.deleteDocument.execute(
+      routeParam(req.params.docId, "docId"),
+      routeParam(req.params.id, "id"),
+      actor(req).userId,
+    );
     res.status(204).send();
   });
 

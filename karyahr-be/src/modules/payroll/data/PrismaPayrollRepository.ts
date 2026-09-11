@@ -78,7 +78,7 @@ function toProfile(
     npwp: decryptOptionalUtf8Field(cipher, row.npwp),
     bankName: row.bankName,
     bankAccountNumber: decryptUtf8Field(cipher, row.bankAccountNumber),
-    bankAccountName: row.bankAccountName,
+    bankAccountName: decryptUtf8Field(cipher, row.bankAccountName),
     bpjsKesehatanEnrolled: row.bpjsKesehatanEnrolled,
     bpjsTkEnrolled: row.bpjsTkEnrolled,
   };
@@ -217,6 +217,7 @@ export class PrismaEmployeePayrollProfileRepository implements IEmployeePayrollP
   async upsert(input: Omit<EmployeePayrollProfile, "id">): Promise<EmployeePayrollProfile> {
     const npwp = encryptOptionalUtf8Field(this.cipher, input.npwp);
     const bankAccountNumber = encryptUtf8Field(this.cipher, input.bankAccountNumber);
+    const bankAccountName = encryptUtf8Field(this.cipher, input.bankAccountName);
     const row = await this.prisma.employeePayrollProfile.upsert({
       where: { employeeId: input.employeeId },
       create: {
@@ -226,7 +227,7 @@ export class PrismaEmployeePayrollProfileRepository implements IEmployeePayrollP
         npwp,
         bankName: input.bankName,
         bankAccountNumber,
-        bankAccountName: input.bankAccountName,
+        bankAccountName,
         bpjsKesehatanEnrolled: input.bpjsKesehatanEnrolled,
         bpjsTkEnrolled: input.bpjsTkEnrolled,
       },
@@ -236,7 +237,7 @@ export class PrismaEmployeePayrollProfileRepository implements IEmployeePayrollP
         npwp,
         bankName: input.bankName,
         bankAccountNumber,
-        bankAccountName: input.bankAccountName,
+        bankAccountName,
         bpjsKesehatanEnrolled: input.bpjsKesehatanEnrolled,
         bpjsTkEnrolled: input.bpjsTkEnrolled,
       },

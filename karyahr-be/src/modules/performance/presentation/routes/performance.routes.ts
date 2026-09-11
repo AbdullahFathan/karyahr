@@ -3,7 +3,7 @@ import { PrismaAuditLogRepository } from "../../../../shared/audit/PrismaAuditLo
 import { PERMISSIONS } from "../../../../shared/auth/permissions";
 import { getPrisma } from "../../../../shared/database/prisma";
 import { requireAuth } from "../../../../shared/middleware/require-auth";
-import { requirePermission } from "../../../../shared/middleware/require-permission";
+import { requireAnyPermission, requirePermission } from "../../../../shared/middleware/require-permission";
 import { PrismaUserRepository } from "../../../auth/data/PrismaUserRepository";
 import { PrismaEmployeeRepository } from "../../../employees/data/PrismaEmployeeRepository";
 import { QueueNotificationDispatcher } from "../../../notifications/data/QueueNotificationDispatcher";
@@ -87,7 +87,12 @@ export function createPerformanceRouter(): Router {
   });
 
   const router = Router();
-  router.post("/performance/goals", requireAuth, controller.createGoal);
+  router.post(
+    "/performance/goals",
+    requireAuth,
+    requireAnyPermission(PERMISSIONS.PERFORMANCE_GOALS_ME, PERMISSIONS.PERFORMANCE_GOALS_WRITE),
+    controller.createGoal,
+  );
   router.get(
     "/performance/goals/me",
     requireAuth,
@@ -95,10 +100,34 @@ export function createPerformanceRouter(): Router {
     controller.listMyGoals,
   );
   router.get("/performance/goals", requireAuth, requirePermission(PERMISSIONS.PERFORMANCE_GOALS_READ), controller.listGoals);
-  router.get("/performance/goals/:id", requireAuth, controller.getGoal);
-  router.patch("/performance/goals/:id", requireAuth, controller.updateGoal);
-  router.post("/performance/goals/:id/progress", requireAuth, controller.progressGoal);
-  router.post("/performance/goals/:id/submit", requireAuth, controller.submitGoal);
+  router.get(
+    "/performance/goals/:id",
+    requireAuth,
+    requireAnyPermission(
+      PERMISSIONS.PERFORMANCE_GOALS_ME,
+      PERMISSIONS.PERFORMANCE_GOALS_READ,
+      PERMISSIONS.PERFORMANCE_GOALS_WRITE,
+    ),
+    controller.getGoal,
+  );
+  router.patch(
+    "/performance/goals/:id",
+    requireAuth,
+    requireAnyPermission(PERMISSIONS.PERFORMANCE_GOALS_ME, PERMISSIONS.PERFORMANCE_GOALS_WRITE),
+    controller.updateGoal,
+  );
+  router.post(
+    "/performance/goals/:id/progress",
+    requireAuth,
+    requireAnyPermission(PERMISSIONS.PERFORMANCE_GOALS_ME, PERMISSIONS.PERFORMANCE_GOALS_WRITE),
+    controller.progressGoal,
+  );
+  router.post(
+    "/performance/goals/:id/submit",
+    requireAuth,
+    requireAnyPermission(PERMISSIONS.PERFORMANCE_GOALS_ME, PERMISSIONS.PERFORMANCE_GOALS_WRITE),
+    controller.submitGoal,
+  );
   router.post(
     "/performance/goals/:id/approve",
     requireAuth,
@@ -111,8 +140,18 @@ export function createPerformanceRouter(): Router {
     requirePermission(PERMISSIONS.PERFORMANCE_GOALS_APPROVE),
     controller.rejectGoal,
   );
-  router.post("/performance/goals/:id/complete", requireAuth, controller.completeGoal);
-  router.post("/performance/goals/:id/cancel", requireAuth, controller.cancelGoal);
+  router.post(
+    "/performance/goals/:id/complete",
+    requireAuth,
+    requireAnyPermission(PERMISSIONS.PERFORMANCE_GOALS_ME, PERMISSIONS.PERFORMANCE_GOALS_WRITE),
+    controller.completeGoal,
+  );
+  router.post(
+    "/performance/goals/:id/cancel",
+    requireAuth,
+    requireAnyPermission(PERMISSIONS.PERFORMANCE_GOALS_ME, PERMISSIONS.PERFORMANCE_GOALS_WRITE),
+    controller.cancelGoal,
+  );
 
   router.get("/performance/cycles", requireAuth, requirePermission(PERMISSIONS.PERFORMANCE_REVIEWS_ME), controller.listCycles);
   router.get("/performance/cycles/:id", requireAuth, requirePermission(PERMISSIONS.PERFORMANCE_REVIEWS_ME), controller.getCycle);
@@ -147,21 +186,44 @@ export function createPerformanceRouter(): Router {
     requirePermission(PERMISSIONS.PERFORMANCE_REVIEWS_ME),
     controller.listMyReviews,
   );
-  router.get("/performance/reviews/:id", requireAuth, controller.getReview);
+  router.get(
+    "/performance/reviews/:id",
+    requireAuth,
+    requireAnyPermission(
+      PERMISSIONS.PERFORMANCE_REVIEWS_ME,
+      PERMISSIONS.PERFORMANCE_REVIEWS_READ,
+      PERMISSIONS.PERFORMANCE_REVIEWS_WRITE,
+    ),
+    controller.getReview,
+  );
   router.post(
     "/performance/reviews/:id/peers",
     requireAuth,
     requirePermission(PERMISSIONS.PERFORMANCE_REVIEWS_WRITE),
     controller.assignPeers,
   );
-  router.post("/performance/reviews/:id/ratings", requireAuth, controller.submitRating);
+  router.post(
+    "/performance/reviews/:id/ratings",
+    requireAuth,
+    requireAnyPermission(PERMISSIONS.PERFORMANCE_REVIEWS_ME, PERMISSIONS.PERFORMANCE_REVIEWS_WRITE),
+    controller.submitRating,
+  );
   router.post(
     "/performance/reviews/:id/complete",
     requireAuth,
     requirePermission(PERMISSIONS.PERFORMANCE_REVIEWS_WRITE),
     controller.completeReview,
   );
-  router.get("/performance/employees/:employeeId/reviews", requireAuth, controller.listEmployeeReviews);
+  router.get(
+    "/performance/employees/:employeeId/reviews",
+    requireAuth,
+    requireAnyPermission(
+      PERMISSIONS.PERFORMANCE_REVIEWS_ME,
+      PERMISSIONS.PERFORMANCE_REVIEWS_READ,
+      PERMISSIONS.PERFORMANCE_REVIEWS_WRITE,
+    ),
+    controller.listEmployeeReviews,
+  );
 
   router.get(
     "/performance/dashboard/team",

@@ -361,6 +361,48 @@ describe("review ratings", () => {
     const rating = await submit.execute(actor("p1", []), "r1", { raterType: "PEER", score: 3, comment: "peer" });
     expect(rating.raterType).toBe("PEER");
   });
+
+  test("reviews:write without being manager or HR cannot assign peers or complete", async () => {
+    const reviews = new MemoryReviews();
+    reviews.seed({
+      id: "r1",
+      cycleId: "c1",
+      employeeId: "e1",
+      status: "IN_PROGRESS",
+      finalScore: null,
+      recommendation: null,
+      peers: [],
+      ratings: [
+        {
+          id: "s",
+          reviewId: "r1",
+          raterEmployeeId: "e1",
+          raterType: "SELF",
+          score: 5,
+          comment: "self",
+          submittedAt: new Date("2026-01-02"),
+        },
+        {
+          id: "m",
+          reviewId: "r1",
+          raterEmployeeId: "m1",
+          raterType: "MANAGER",
+          score: 4,
+          comment: "mgr",
+          submittedAt: new Date("2026-01-02"),
+        },
+      ],
+    });
+    const cycles = new MemoryCycles(cycle);
+    const employees = new MemoryEmployees([employee, manager, peer]);
+    const writer = actor("p1", [PERMISSIONS.PERFORMANCE_REVIEWS_WRITE]);
+    await expect(new AssignPeersUseCase(cycles, reviews, employees, new MemoryAudit()).execute(writer, "r1", ["p1"])).rejects.toBeInstanceOf(
+      ForbiddenError,
+    );
+    await expect(
+      new CompleteReviewUseCase(cycles, reviews, employees, new MemoryAudit()).execute(writer, "r1"),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+  });
 });
 
 describe("cycle open and dashboard", () => {

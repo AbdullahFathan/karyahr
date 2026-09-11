@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { IAuditLogRepository } from "../../../../shared/audit/IAuditLogRepository";
 import { ConflictError, NotFoundError, ValidationError } from "../../../../shared/errors/app-error";
 import type { IObjectStorage } from "../../../../shared/storage/IObjectStorage";
+import { assertAllowedUpload } from "../../../../shared/storage/assert-allowed-upload";
 import { HR_ADMIN_ROLE, RECRUITER_ROLE } from "../../../../shared/auth/permissions";
 import type { IUserRepository } from "../../../auth/domain/repositories/IUserRepository";
 import type { INotificationDispatcher } from "../../../notifications/domain/ports/INotificationDispatcher";
@@ -82,6 +83,7 @@ export class ApplyToJobUseCase {
       if (input.file.buffer.length > this.maxUploadBytes) {
         throw new ValidationError("File exceeds maximum upload size");
       }
+      assertAllowedUpload(input.file.contentType);
       const attachmentId = randomUUID();
       const objectKey = `recruitment/${created.id}/${attachmentId}`;
       await this.storage.putObject(objectKey, input.file.buffer, input.file.contentType);

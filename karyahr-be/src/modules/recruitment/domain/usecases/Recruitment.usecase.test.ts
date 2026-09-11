@@ -424,6 +424,22 @@ describe("ApplyToJobUseCase", () => {
     ).rejects.toBeInstanceOf(ConflictError);
   });
 
+  test("rejects a disallowed attachment type", async () => {
+    const jobs = new MemoryJobs({ ...posting, maxApplicants: 5 });
+    await expect(
+      applyUseCase(jobs, new MemoryApplications(), new MemoryDispatcher()).execute(
+        { slug: "engineer" },
+        {
+          fullName: "A",
+          email: "a@x.com",
+          phone: "1",
+          file: { buffer: Buffer.from("<html>"), fileName: "x.html", contentType: "text/html" },
+        },
+        null,
+      ),
+    ).rejects.toBeInstanceOf(ValidationError);
+  });
+
   test("rejects apply when posting is closed", async () => {
     const jobs = new MemoryJobs({ ...posting, status: "CLOSED" });
     await expect(
@@ -543,6 +559,43 @@ describe("CompleteOnboardingTaskUseCase", () => {
         permissionKeys: [PERMISSIONS.ONBOARDING_TASKS_COMPLETE],
       }),
     ).rejects.toBeInstanceOf(ForbiddenError);
+  });
+
+  test("forbids an employee from completing an unassigned IT task", async () => {
+    const processes = new MemoryProcesses();
+    await processes.createFromTemplate({
+      employeeId: "e1",
+      template: {
+        id: "tmpl",
+        name: "Default",
+        positionId: null,
+        items: [
+          {
+            id: "i1",
+            templateId: "tmpl",
+            title: "Laptop",
+            description: "IT",
+            assigneeKind: "IT",
+            sortOrder: 0,
+          },
+        ],
+      },
+      managerId: null,
+    });
+    const useCase = new CompleteOnboardingTaskUseCase(processes, new MemoryEmployees([]));
+    await expect(
+      useCase.execute("t0", {
+        userId: "u1",
+        employeeId: "e1",
+        permissionKeys: [PERMISSIONS.ONBOARDING_TASKS_COMPLETE],
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+    const completed = await useCase.execute("t0", {
+      userId: "u-hr",
+      employeeId: "e-hr",
+      permissionKeys: [PERMISSIONS.ONBOARDING_READ],
+    });
+    expect(completed.tasks[0]?.completedAt).not.toBeNull();
   });
 });
 

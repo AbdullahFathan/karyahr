@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { IAuditLogRepository } from "../../../../shared/audit/IAuditLogRepository";
 import { ForbiddenError, NotFoundError, ValidationError } from "../../../../shared/errors/app-error";
 import type { IObjectStorage } from "../../../../shared/storage/IObjectStorage";
+import { assertAllowedUpload } from "../../../../shared/storage/assert-allowed-upload";
 import { HR_ADMIN_ROLE } from "../../../../shared/auth/permissions";
 import { jakartaYearMonth } from "../../../../shared/utils/jakarta-time";
 import type { IUserRepository } from "../../../auth/domain/repositories/IUserRepository";
@@ -100,6 +101,9 @@ export class CreateLeaveRequestUseCase {
     }
     if (input.file && input.file.buffer.byteLength > this.maxUploadBytes) {
       throw new ValidationError("Attachment exceeds maximum size");
+    }
+    if (input.file) {
+      assertAllowedUpload(input.file.contentType);
     }
     const days = leaveDayCount(input.startDate, input.endDate);
     const overlapping = await this.requests.findOverlapping(

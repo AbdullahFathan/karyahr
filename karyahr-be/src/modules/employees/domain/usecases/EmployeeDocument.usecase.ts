@@ -1,6 +1,7 @@
 import { NotFoundError, ValidationError } from "../../../../shared/errors/app-error";
 import type { IAuditLogRepository } from "../../../../shared/audit/IAuditLogRepository";
 import type { IObjectStorage } from "../../../../shared/storage/IObjectStorage";
+import { assertAllowedUpload } from "../../../../shared/storage/assert-allowed-upload";
 import type { DocumentType, EmployeeDocument } from "../entities/Employee";
 import type {
   IEmployeeDocumentRepository,
@@ -38,6 +39,7 @@ export class UploadEmployeeDocumentUseCase {
     if (input.body.length > this.maxBytes) {
       throw new ValidationError("File exceeds maximum upload size");
     }
+    assertAllowedUpload(input.contentType);
     const objectKey = `employees/${input.employeeId}/${input.documentId}`;
     await this.storage.putObject(objectKey, input.body, input.contentType);
     const document = await this.documents.create({
@@ -88,9 +90,12 @@ export class GetEmployeeDocumentFileUseCase {
     private readonly storage: IObjectStorage,
   ) {}
 
-  async execute(documentId: string) {
+  async execute(documentId: string, employeeId: string) {
     const document = await this.documents.findById(documentId);
     if (!document) {
+      throw new NotFoundError("Document not found");
+    }
+    if (document.employeeId !== employeeId) {
       throw new NotFoundError("Document not found");
     }
     const object = await this.storage.getObject(document.objectKey);
@@ -108,9 +113,12 @@ export class DeleteEmployeeDocumentUseCase {
     private readonly audit: IAuditLogRepository,
   ) {}
 
-  async execute(documentId: string, actorUserId: string): Promise<void> {
+  async execute(documentId: string, employeeId: string, actorUserId: string): Promise<void> {
     const document = await this.documents.findById(documentId);
     if (!document) {
+      throw new NotFoundError("Document not found");
+    }
+    if (document.employeeId !== employeeId) {
       throw new NotFoundError("Document not found");
     }
     await this.storage.deleteObject(document.objectKey);

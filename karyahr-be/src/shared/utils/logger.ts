@@ -7,4 +7,14 @@ import { env } from "../../config/env";
 export const logger = pino({
   level: env().LOG_LEVEL,
   base: { service: "karyahr-be" },
+  redact: {
+    paths: [
+      "req.headers.cookie",
+      "req.headers.authorization",
+      "req.headers.Authorization",
+      "password",
+      "*.password",
+    ],
+    censor: "[Redacted]",
+  },
 });

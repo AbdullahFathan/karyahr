@@ -207,7 +207,7 @@ export class CompleteOnboardingTaskUseCase {
       }
       return;
     }
-    if (!actor.permissionKeys.includes(PERMISSIONS.ONBOARDING_TASKS_COMPLETE)) {
+    if (!actor.permissionKeys.includes(PERMISSIONS.ONBOARDING_READ)) {
       throw new ForbiddenError("Missing permission to complete this task");
     }
   }

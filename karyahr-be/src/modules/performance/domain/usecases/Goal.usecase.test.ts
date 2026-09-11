@@ -336,6 +336,26 @@ describe("goal approval", () => {
       ForbiddenError,
     );
   });
+
+  test("a manager cannot approve another team's goal", async () => {
+    const goals = new MemoryGoals();
+    const employees = new MemoryEmployees([employee, manager]);
+    const users = new MemoryUsers([employeeUser, managerUser]);
+    const dispatcher = new MemoryDispatcher();
+    const create = new CreateGoalUseCase(goals, employees, new MemoryAudit());
+    const submit = new SubmitGoalUseCase(goals, employees, users, dispatcher, new MemoryAudit());
+    const decide = new DecideGoalUseCase(goals, employees, users, dispatcher, new MemoryAudit());
+    const created = await create.execute(employeeActor(), { level: "EMPLOYEE", title: "KPI", description: "x" });
+    await submit.execute(employeeActor(), created.id);
+    const otherManager: PerformanceActor = {
+      userId: "u-m2",
+      employeeId: "m2",
+      permissionKeys: [PERMISSIONS.PERFORMANCE_GOALS_APPROVE],
+    };
+    await expect(new ApproveGoalUseCase(decide).execute(otherManager, created.id)).rejects.toBeInstanceOf(
+      ForbiddenError,
+    );
+  });
 });
 
 describe("goal update progress close and list", () => {

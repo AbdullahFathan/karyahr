@@ -381,7 +381,7 @@ export class DecideGoalUseCase {
       throw new NotFoundError("Employee not found");
     }
     const isManager = employee.managerId === actor.employeeId;
-    if (!isManager && !has(actor, PERMISSIONS.PERFORMANCE_GOALS_APPROVE)) {
+    if (!isManager && !isHr(actor)) {
       throw new ForbiddenError("Not allowed to decide this goal");
     }
     const updated = await this.goals.update(id, { status: decision });

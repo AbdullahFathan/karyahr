@@ -22,6 +22,13 @@ describe("payroll-field-crypto", () => {
     expect(decryptRupiah(cipher, "8000000")).toBe(8_000_000n);
   });
 
+  test("encrypts and decrypts bank account names without leaking plaintext", () => {
+    const stored = encryptUtf8Field(cipher, "Siti Rahma");
+    expect(stored).not.toContain("Siti");
+    expect(decryptUtf8Field(cipher, stored)).toBe("Siti Rahma");
+    expect(decryptUtf8Field(cipher, "Siti Rahma")).toBe("Siti Rahma");
+  });
+
   test("encrypts and decrypts bank account numbers", () => {
     const stored = encryptUtf8Field(cipher, "1234567890");
     expect(stored).not.toBe("1234567890");

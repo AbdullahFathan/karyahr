@@ -114,9 +114,9 @@ describe("Employee documents", () => {
     });
     expect(uploaded.objectKey).toBe("employees/e1/doc1");
     expect(await new ListEmployeeDocumentsUseCase(employees, documents).execute("e1")).toHaveLength(1);
-    const file = await new GetEmployeeDocumentFileUseCase(documents, storage).execute("doc1");
+    const file = await new GetEmployeeDocumentFileUseCase(documents, storage).execute("doc1", "e1");
     expect(file.document.fileName).toBe("ktp.pdf");
-    await new DeleteEmployeeDocumentUseCase(documents, storage, audit).execute("doc1", "u1");
+    await new DeleteEmployeeDocumentUseCase(documents, storage, audit).execute("doc1", "e1", "u1");
     expect(storage.keys.size).toBe(0);
   });
 
@@ -134,7 +134,7 @@ describe("Employee documents", () => {
         documentId: "d",
         type: "KTP",
         fileName: "a",
-        contentType: "text/plain",
+        contentType: "application/pdf",
         body: Buffer.from(""),
         uploadedByUserId: "u1",
       }),
@@ -145,7 +145,7 @@ describe("Employee documents", () => {
         documentId: "d",
         type: "KTP",
         fileName: "a",
-        contentType: "text/plain",
+        contentType: "application/pdf",
         body: Buffer.from("12345"),
         uploadedByUserId: "u1",
       }),
@@ -162,7 +162,7 @@ describe("Employee documents", () => {
         documentId: "d",
         type: "KTP",
         fileName: "a",
-        contentType: "text/plain",
+        contentType: "application/pdf",
         body: Buffer.from("x"),
         uploadedByUserId: "u1",
       }),
@@ -174,13 +174,60 @@ describe("Employee documents", () => {
       new ListEmployeeDocumentsUseCase(new MemoryEmployees(null), new MemoryDocuments()).execute("e1"),
     ).rejects.toBeInstanceOf(NotFoundError);
     await expect(
-      new GetEmployeeDocumentFileUseCase(new MemoryDocuments(), new MemoryStorage()).execute("missing"),
+      new GetEmployeeDocumentFileUseCase(new MemoryDocuments(), new MemoryStorage()).execute("missing", "e1"),
     ).rejects.toBeInstanceOf(NotFoundError);
     await expect(
       new DeleteEmployeeDocumentUseCase(new MemoryDocuments(), new MemoryStorage(), audit).execute(
         "missing",
+        "e1",
         "u1",
       ),
     ).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  test("rejects a document that does not belong to the path employee", async () => {
+    const documents = new MemoryDocuments();
+    const storage = new MemoryStorage();
+    await new UploadEmployeeDocumentUseCase(
+      new MemoryEmployees(employee),
+      documents,
+      storage,
+      audit,
+      1024,
+    ).execute({
+      employeeId: "e1",
+      documentId: "doc1",
+      type: "KTP",
+      fileName: "ktp.pdf",
+      contentType: "application/pdf",
+      body: Buffer.from("pdf"),
+      uploadedByUserId: "u1",
+    });
+    await expect(
+      new GetEmployeeDocumentFileUseCase(documents, storage).execute("doc1", "other"),
+    ).rejects.toBeInstanceOf(NotFoundError);
+    await expect(
+      new DeleteEmployeeDocumentUseCase(documents, storage, audit).execute("doc1", "other", "u1"),
+    ).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  test("rejects a disallowed content type", async () => {
+    await expect(
+      new UploadEmployeeDocumentUseCase(
+        new MemoryEmployees(employee),
+        new MemoryDocuments(),
+        new MemoryStorage(),
+        audit,
+        1024,
+      ).execute({
+        employeeId: "e1",
+        documentId: "d",
+        type: "KTP",
+        fileName: "x.html",
+        contentType: "text/html",
+        body: Buffer.from("<script>"),
+        uploadedByUserId: "u1",
+      }),
+    ).rejects.toBeInstanceOf(ValidationError);
   });
 });

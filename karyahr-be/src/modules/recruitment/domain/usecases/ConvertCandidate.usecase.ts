@@ -77,7 +77,7 @@ export class ConvertCandidateUseCase {
       },
       actorUserId,
     );
-    const provisioned = await this.provisionUser.provision({
+    await this.provisionUser.provision({
       email: application.candidate.email,
       employeeId: employee.id,
     });
@@ -94,7 +94,7 @@ export class ConvertCandidateUseCase {
       type: "recruitment.decision",
       recipientEmail: application.candidate.email,
       title: `Offer accepted: ${posting.title}`,
-      body: `Welcome to KaryaHR. Your employee number is ${employee.employeeNumber}. Temporary password: ${provisioned.temporaryPassword}`,
+      body: `Welcome to KaryaHR. Your employee number is ${employee.employeeNumber}. Sign in with the credentials issued at hire.`,
       entityType: "Application",
       entityId: hired.id,
     });
