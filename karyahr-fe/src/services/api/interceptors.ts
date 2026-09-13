@@ -8,6 +8,13 @@ const SKIP_REFRESH_PATHS = new Set<string>([
 ])
 
 export function attachInterceptors(client: AxiosInstance): void {
+  client.interceptors.request.use((config) => {
+    if (config.data instanceof FormData) {
+      config.headers.delete('Content-Type')
+    }
+    return config
+  })
+
   client.interceptors.response.use(
     (response) => response,
     async (error: unknown) => {

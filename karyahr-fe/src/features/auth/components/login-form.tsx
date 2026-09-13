@@ -3,6 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { useLogin } from '@/features/auth/hooks/use-login'
 import { loginSchema } from '@/features/auth/schema'
 import { APP_NAME } from '@/lib/constants'
+import { getApiErrorMessage } from '@/lib/api-error'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
+import { Input } from '@/components/ui/input'
+import { Spinner } from '@/components/ui/spinner'
 
 export function LoginForm() {
   const navigate = useNavigate()
@@ -23,59 +29,52 @@ export function LoginForm() {
     try {
       await loginMutation.mutateAsync(parsed.data)
       await navigate('/')
-    } catch {
-      setFormError('Sign in failed. Check email and password.')
+    } catch (error) {
+      setFormError(getApiErrorMessage(error))
     }
   }
 
+  const isInvalid = Boolean(formError)
+
   return (
-    <form
-      onSubmit={onSubmit}
-      style={{
-        width: 400,
-        background: '#ffffff',
-        borderRadius: 16,
-        padding: 32,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 16,
-        boxShadow: '0 8px 24px rgb(22 21 28 / 6%)',
-      }}
-    >
-      <h1 style={{ margin: 0, fontSize: 24 }}>{APP_NAME}</h1>
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        Email
-        <input
-          type="email"
-          autoComplete="username"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-        />
-      </label>
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        Password
-        <input
-          type="password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-        />
-      </label>
-      {formError ? <p style={{ color: '#e11d48', margin: 0 }}>{formError}</p> : null}
-      <button
-        type="submit"
-        disabled={loginMutation.isPending}
-        style={{
-          background: '#e11d48',
-          color: '#ffffff',
-          border: 0,
-          borderRadius: 8,
-          padding: '10px 16px',
-          cursor: 'pointer',
-        }}
-      >
-        {loginMutation.isPending ? 'Signing in…' : 'Sign in'}
-      </button>
-    </form>
+    <Card className="w-full max-w-md shadow-md">
+      <CardHeader>
+        <CardTitle className="text-2xl">{APP_NAME}</CardTitle>
+        <CardDescription>Sign in with your work email.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={onSubmit} className="flex flex-col gap-5">
+          <FieldGroup>
+            <Field data-invalid={isInvalid || undefined}>
+              <FieldLabel htmlFor="email">Email</FieldLabel>
+              <Input
+                id="email"
+                type="email"
+                autoComplete="username"
+                value={email}
+                aria-invalid={isInvalid || undefined}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            </Field>
+            <Field data-invalid={isInvalid || undefined}>
+              <FieldLabel htmlFor="password">Password</FieldLabel>
+              <Input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                aria-invalid={isInvalid || undefined}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+            </Field>
+            {formError ? <FieldError>{formError}</FieldError> : null}
+          </FieldGroup>
+          <Button type="submit" size="lg" disabled={loginMutation.isPending}>
+            {loginMutation.isPending ? <Spinner data-icon="inline-start" /> : null}
+            {loginMutation.isPending ? 'Signing in…' : 'Sign in'}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   )
 }
