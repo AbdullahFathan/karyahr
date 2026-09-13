@@ -33,7 +33,7 @@ export function Sidebar() {
                   <NavLink
                     key={item.label}
                     to={item.to ?? '/'}
-                    end={item.to === '/'}
+                    end={item.end ?? item.to === '/'}
                     className={({ isActive }) =>
                       cn(
                         'rounded-lg px-3 py-2 text-sm font-medium transition-colors',

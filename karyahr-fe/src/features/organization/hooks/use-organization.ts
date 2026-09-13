@@ -13,17 +13,19 @@ import {
 import { queryClient } from '@/services/query/query-client'
 import { queryKeys } from '@/services/query/query-keys'
 
-export function useDepartments() {
+export function useDepartments(enabled = true) {
   return useQuery({
     queryKey: queryKeys.organization.departments,
     queryFn: listDepartments,
+    enabled,
   })
 }
 
-export function usePositions() {
+export function usePositions(enabled = true) {
   return useQuery({
     queryKey: queryKeys.organization.positions,
     queryFn: listPositions,
+    enabled,
   })
 }
 

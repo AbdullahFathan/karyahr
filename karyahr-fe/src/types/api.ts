@@ -15,6 +15,10 @@ export type Paginated<T> = {
   readonly meta: PaginationMeta
 }
 
+export type ApiEnvelope<T> = {
+  readonly data: T
+}
+
 export type ApiErrorBody = {
   readonly error?: string
   readonly message?: string

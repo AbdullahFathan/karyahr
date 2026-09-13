@@ -14,6 +14,20 @@ export const PERMISSIONS = {
   EMPLOYEES_CHANGE_REQUEST_CREATE: 'employees:change-request:create',
   EMPLOYEES_CHANGE_REQUEST_READ: 'employees:change-request:read',
   EMPLOYEES_CHANGE_REQUEST_REVIEW: 'employees:change-request:review',
+  ATTENDANCE_ME_PUNCH: 'attendance:me:punch',
+  ATTENDANCE_ME_READ: 'attendance:me:read',
+  ATTENDANCE_DASHBOARD: 'attendance:dashboard',
+  ATTENDANCE_READ: 'attendance:read',
+  ATTENDANCE_SHIFTS_WRITE: 'attendance:shifts:write',
+  ATTENDANCE_EXPORT: 'attendance:export',
+  LEAVE_REQUESTS_CREATE: 'leave:requests:create',
+  LEAVE_BALANCES_ME: 'leave:balances:me',
+  LEAVE_REQUESTS_ME: 'leave:requests:me',
+  LEAVE_REQUESTS_APPROVE: 'leave:requests:approve',
+  LEAVE_REQUESTS_READ: 'leave:requests:read',
+  LEAVE_TYPES_WRITE: 'leave:types:write',
+  LEAVE_POLICIES_WRITE: 'leave:policies:write',
+  NOTIFICATIONS_ME: 'notifications:me',
 } as const
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]

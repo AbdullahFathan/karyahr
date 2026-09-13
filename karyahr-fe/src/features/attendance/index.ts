@@ -1,1 +1,6 @@
-export {}
+export { PunchPage } from '@/features/attendance/pages/punch-page'
+export { MyAttendancePage } from '@/features/attendance/pages/my-attendance-page'
+export { AttendanceDashboardPage } from '@/features/attendance/pages/attendance-dashboard-page'
+export { AttendanceSummaryPage } from '@/features/attendance/pages/attendance-summary-page'
+export { ShiftsPage } from '@/features/attendance/pages/shifts-page'
+export { ShiftAssignmentsPage } from '@/features/attendance/pages/shift-assignments-page'

@@ -11,6 +11,7 @@ export type NavItem = {
   readonly label: string
   readonly to?: string
   readonly permission?: string
+  readonly end?: boolean
 }
 
 export type NavGroup = {
@@ -41,8 +42,26 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     ],
   },
   {
+    label: 'Time',
+    items: [
+      { label: 'Check-in', to: '/attendance', permission: 'attendance:me:punch', end: true },
+      { label: 'My attendance', to: '/attendance/me', permission: 'attendance:me:read' },
+      { label: 'Attendance dashboard', to: '/attendance/dashboard', permission: 'attendance:dashboard' },
+      { label: 'Attendance summary', to: '/attendance/summary', permission: 'attendance:me:read' },
+      { label: 'Shifts', to: '/attendance/shifts', permission: 'attendance:read', end: true },
+      { label: 'Leave types', to: '/leave/types', permission: 'leave:types:write' },
+      { label: 'Leave policies', to: '/leave/policies', permission: 'leave:policies:write' },
+      { label: 'My leave', to: '/leave', permission: 'leave:requests:me', end: true },
+      { label: 'New leave request', to: '/leave/new', permission: 'leave:requests:create' },
+      { label: 'Leave inbox', to: '/leave/inbox', permission: 'leave:requests:approve' },
+    ],
+  },
+  {
     label: 'Admin',
-    items: [{ label: 'Roles', to: '/admin/roles', permission: 'auth:roles:read' }],
+    items: [
+      { label: 'Notifications', to: '/notifications', permission: 'notifications:me' },
+      { label: 'Roles', to: '/admin/roles', permission: 'auth:roles:read' },
+    ],
   },
 ] as const
 
@@ -55,5 +74,16 @@ export const PAGE_TITLES: Record<string, string> = {
   '/org/departments': 'Departments',
   '/org/positions': 'Positions',
   '/org/tree': 'Org chart',
+  '/attendance': 'Check-in / Check-out',
+  '/attendance/me': 'My attendance',
+  '/attendance/dashboard': 'Attendance dashboard',
+  '/attendance/summary': 'Attendance summary',
+  '/attendance/shifts': 'Shifts',
+  '/leave/types': 'Leave types',
+  '/leave/policies': 'Leave policies',
+  '/leave': 'My leave',
+  '/leave/new': 'New leave request',
+  '/leave/inbox': 'Leave inbox',
+  '/notifications': 'Notifications',
   '/admin/roles': 'Roles',
 }

@@ -22,10 +22,11 @@ import type { EmployeeFormInput, MutationFormInput } from '@/features/employees/
 import { queryClient } from '@/services/query/query-client'
 import { queryKeys } from '@/services/query/query-keys'
 
-export function useEmployees(filters: EmployeeListFilters) {
+export function useEmployees(filters: EmployeeListFilters, enabled = true) {
   return useQuery({
     queryKey: queryKeys.employees.list(filters),
     queryFn: () => listEmployees(filters),
+    enabled,
   })
 }
 

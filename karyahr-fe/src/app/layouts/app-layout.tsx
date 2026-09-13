@@ -10,6 +10,9 @@ function pageTitle(pathname: string): string {
   if (pathname.startsWith('/employees/') && pathname !== '/employees/new') {
     return 'Employee'
   }
+  if (pathname.includes('/assignments')) {
+    return 'Shift assignments'
+  }
   return APP_NAME
 }
 

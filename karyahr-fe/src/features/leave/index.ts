@@ -1,1 +1,5 @@
-export {}
+export { LeaveTypesPage } from '@/features/leave/pages/leave-types-page'
+export { LeavePoliciesPage } from '@/features/leave/pages/leave-policies-page'
+export { MyLeavePage } from '@/features/leave/pages/my-leave-page'
+export { NewLeaveRequestPage } from '@/features/leave/pages/new-leave-request-page'
+export { LeaveInboxPage } from '@/features/leave/pages/leave-inbox-page'

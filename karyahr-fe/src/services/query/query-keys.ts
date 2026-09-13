@@ -7,6 +7,29 @@ export const queryKeys = {
   notifications: {
     me: ['notifications', 'me'] as const,
   },
+  attendance: {
+    all: ['attendance'] as const,
+    me: (from: string, to: string) => ['attendance', 'me', from, to] as const,
+    dashboard: (filters: PaginationQuery & { departmentId?: string }) =>
+      ['attendance', 'dashboard', filters] as const,
+    summary: (filters: {
+      period: string
+      employeeId?: string
+      from?: string
+      to?: string
+    }) => ['attendance', 'summary', filters] as const,
+    shifts: ['attendance', 'shifts'] as const,
+    shift: (id: string) => ['attendance', 'shifts', id] as const,
+    assignments: (employeeId: string) => ['attendance', 'assignments', employeeId] as const,
+  },
+  leave: {
+    all: ['leave'] as const,
+    types: ['leave', 'types'] as const,
+    policies: ['leave', 'policies'] as const,
+    balancesMe: ['leave', 'balances', 'me'] as const,
+    requestsMe: (filters: PaginationQuery) => ['leave', 'requests', 'me', filters] as const,
+    inbox: (filters: PaginationQuery) => ['leave', 'inbox', filters] as const,
+  },
   organization: {
     departments: ['org', 'departments'] as const,
     positions: ['org', 'positions'] as const,

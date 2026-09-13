@@ -1,9 +1,9 @@
-import { BellIcon, SearchIcon } from 'lucide-react'
+import { SearchIcon } from 'lucide-react'
 import { useLogout } from '@/features/auth/hooks/use-logout'
 import { useAuth } from '@/features/auth/hooks/use-auth'
 import { displayName } from '@/lib/auth'
+import { NotificationBell } from '@/features/notifications/components/notification-bell'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,9 +43,7 @@ export function Navbar({ title }: NavbarProps) {
             className="pointer-events-none bg-muted pl-8"
           />
         </div>
-        <Button type="button" variant="ghost" size="icon" disabled aria-label="Notifications">
-          <BellIcon />
-        </Button>
+        <NotificationBell />
         <DropdownMenu>
           <DropdownMenuTrigger aria-label="Account menu" className="rounded-full outline-none">
             <Avatar>

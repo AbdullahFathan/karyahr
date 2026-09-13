@@ -17,6 +17,22 @@ import { DepartmentsPage } from '@/features/organization/pages/departments-page'
 import { PositionsPage } from '@/features/organization/pages/positions-page'
 import { OrgTreePage } from '@/features/organization/pages/org-tree-page'
 import { RolesPage } from '@/features/roles/pages/roles-page'
+import {
+  AttendanceDashboardPage,
+  AttendanceSummaryPage,
+  MyAttendancePage,
+  PunchPage,
+  ShiftAssignmentsPage,
+  ShiftsPage,
+} from '@/features/attendance'
+import {
+  LeaveInboxPage,
+  LeavePoliciesPage,
+  LeaveTypesPage,
+  MyLeavePage,
+  NewLeaveRequestPage,
+} from '@/features/leave'
+import { NotificationsPage } from '@/features/notifications'
 import { PERMISSIONS } from '@/lib/permissions'
 
 export const router = createBrowserRouter([
@@ -69,6 +85,52 @@ export const router = createBrowserRouter([
               { path: '/org/positions', element: <PositionsPage /> },
               { path: '/org/tree', element: <OrgTreePage /> },
             ],
+          },
+          {
+            element: <RequirePermission permission={PERMISSIONS.ATTENDANCE_ME_PUNCH} />,
+            children: [{ path: '/attendance', element: <PunchPage /> }],
+          },
+          {
+            element: <RequirePermission permission={PERMISSIONS.ATTENDANCE_ME_READ} />,
+            children: [
+              { path: '/attendance/me', element: <MyAttendancePage /> },
+              { path: '/attendance/summary', element: <AttendanceSummaryPage /> },
+            ],
+          },
+          {
+            element: <RequirePermission permission={PERMISSIONS.ATTENDANCE_DASHBOARD} />,
+            children: [{ path: '/attendance/dashboard', element: <AttendanceDashboardPage /> }],
+          },
+          {
+            element: <RequirePermission permission={PERMISSIONS.ATTENDANCE_READ} />,
+            children: [
+              { path: '/attendance/shifts', element: <ShiftsPage /> },
+              { path: '/attendance/shifts/:id/assignments', element: <ShiftAssignmentsPage /> },
+            ],
+          },
+          {
+            element: <RequirePermission permission={PERMISSIONS.LEAVE_TYPES_WRITE} />,
+            children: [{ path: '/leave/types', element: <LeaveTypesPage /> }],
+          },
+          {
+            element: <RequirePermission permission={PERMISSIONS.LEAVE_POLICIES_WRITE} />,
+            children: [{ path: '/leave/policies', element: <LeavePoliciesPage /> }],
+          },
+          {
+            element: <RequirePermission permission={PERMISSIONS.LEAVE_REQUESTS_ME} />,
+            children: [{ path: '/leave', element: <MyLeavePage /> }],
+          },
+          {
+            element: <RequirePermission permission={PERMISSIONS.LEAVE_REQUESTS_CREATE} />,
+            children: [{ path: '/leave/new', element: <NewLeaveRequestPage /> }],
+          },
+          {
+            element: <RequirePermission permission={PERMISSIONS.LEAVE_REQUESTS_APPROVE} />,
+            children: [{ path: '/leave/inbox', element: <LeaveInboxPage /> }],
+          },
+          {
+            element: <RequirePermission permission={PERMISSIONS.NOTIFICATIONS_ME} />,
+            children: [{ path: '/notifications', element: <NotificationsPage /> }],
           },
           {
             element: <RequirePermission permission={PERMISSIONS.AUTH_ROLES_READ} />,
