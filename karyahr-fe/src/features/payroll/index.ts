@@ -1,1 +1,6 @@
-export {}
+export { SalaryComponentsPage } from '@/features/payroll/pages/salary-components-page'
+export { PayrollRunsPage } from '@/features/payroll/pages/payroll-runs-page'
+export { PayrollRunDetailPage } from '@/features/payroll/pages/payroll-run-detail-page'
+export { PayslipPage } from '@/features/payroll/pages/payslip-page'
+export { MyPayslipsPage } from '@/features/payroll/pages/my-payslips-page'
+export { EmployeePayrollTab } from '@/features/payroll/components/employee-payroll-tab'

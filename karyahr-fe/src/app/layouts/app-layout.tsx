@@ -13,6 +13,12 @@ function pageTitle(pathname: string): string {
   if (pathname.includes('/assignments')) {
     return 'Shift assignments'
   }
+  if (pathname.startsWith('/payroll/runs/')) {
+    return 'Payroll run'
+  }
+  if (pathname.startsWith('/payslips/')) {
+    return 'Payslip'
+  }
   return APP_NAME
 }
 
@@ -21,11 +27,11 @@ export function AppLayout() {
   const title = pageTitle(pathname)
 
   return (
-    <div className="flex min-h-svh bg-background">
+    <div className="flex h-svh w-full min-w-0 overflow-hidden bg-background">
       <Sidebar />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <Navbar title={title} />
-        <main className="flex-1 p-6">
+        <main className="min-h-0 min-w-0 flex-1 overflow-auto p-6">
           <Outlet />
         </main>
       </div>

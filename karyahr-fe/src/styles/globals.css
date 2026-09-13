@@ -1,6 +1,14 @@
 html,
 body,
 #root {
+  width: 100%;
+  min-width: 0;
   min-height: 100%;
+  min-height: 100dvh;
   margin: 0;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
 }

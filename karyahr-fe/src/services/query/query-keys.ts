@@ -50,4 +50,18 @@ export const queryKeys = {
     all: ['roles'] as const,
     permissions: ['permissions'] as const,
   },
+  payroll: {
+    all: ['payroll'] as const,
+    components: ['payroll', 'components'] as const,
+    profile: (employeeId: string) => ['payroll', 'profile', employeeId] as const,
+    assignments: (employeeId: string) => ['payroll', 'assignments', employeeId] as const,
+    runs: (filters: PaginationQuery) => ['payroll', 'runs', filters] as const,
+    run: (id: string) => ['payroll', 'run', id] as const,
+    runPayslips: (id: string, filters: PaginationQuery) =>
+      ['payroll', 'run', id, 'payslips', filters] as const,
+  },
+  payslips: {
+    me: (filters: PaginationQuery & { from?: string; to?: string }) => ['payslips', 'me', filters] as const,
+    detail: (id: string) => ['payslips', id] as const,
+  },
 } as const

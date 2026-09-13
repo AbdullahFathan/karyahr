@@ -1,5 +1,5 @@
 import { type FormEvent, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { EmptyState } from '@/components/common/empty-state'
 import { Loader } from '@/components/common/loader'
 import { Badge } from '@/components/ui/badge'
@@ -54,11 +54,28 @@ import { useDepartments, usePositions } from '@/features/organization/hooks/use-
 import { useHasPermission } from '@/features/auth/hooks/use-has-permission'
 import { PERMISSIONS } from '@/lib/permissions'
 import { toDateInputValue } from '@/lib/dates'
+import { EmployeePayrollTab } from '@/features/payroll'
+
+const EMPLOYEE_TABS = ['profile', 'documents', 'mutations', 'payroll'] as const
+type EmployeeTab = (typeof EMPLOYEE_TABS)[number]
+
+function isEmployeeTab(value: string | null): value is EmployeeTab {
+  return EMPLOYEE_TABS.some((tab) => tab === value)
+}
 
 export function EmployeeDetailPage() {
   const { id = '' } = useParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { data, isPending, isError } = useEmployee(id)
   const canWrite = useHasPermission(PERMISSIONS.EMPLOYEES_WRITE)
+  const canPayroll = useHasPermission(PERMISSIONS.PAYROLL_PROFILE_WRITE)
+  const requestedTab = searchParams.get('tab')
+  const tab: EmployeeTab =
+    requestedTab === 'payroll' && !canPayroll
+      ? 'profile'
+      : isEmployeeTab(requestedTab)
+        ? requestedTab
+        : 'profile'
 
   if (isPending) {
     return <Loader />
@@ -76,11 +93,20 @@ export function EmployeeDetailPage() {
         </div>
         <Badge variant="secondary">{data.status}</Badge>
       </div>
-      <Tabs defaultValue="profile">
+      <Tabs
+        value={tab}
+        onValueChange={(value) => {
+          if (!isEmployeeTab(value)) {
+            return
+          }
+          setSearchParams(value === 'profile' ? {} : { tab: value }, { replace: true })
+        }}
+      >
         <TabsList>
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="mutations">Mutations</TabsTrigger>
+          {canPayroll ? <TabsTrigger value="payroll">Payroll</TabsTrigger> : null}
         </TabsList>
         <TabsContent value="profile" className="pt-4">
           <ProfileTab employeeId={id} canWrite={canWrite} />
@@ -91,6 +117,11 @@ export function EmployeeDetailPage() {
         <TabsContent value="mutations" className="pt-4">
           <MutationsTab employeeId={id} canWrite={canWrite} />
         </TabsContent>
+        {canPayroll ? (
+          <TabsContent value="payroll" className="pt-4">
+            <EmployeePayrollTab employeeId={id} />
+          </TabsContent>
+        ) : null}
       </Tabs>
     </div>
   )

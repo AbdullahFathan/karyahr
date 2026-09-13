@@ -10,7 +10,7 @@ export function Sidebar() {
   const permissions = data?.permissions ?? []
 
   return (
-    <aside className="flex w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar">
+    <aside className="flex h-full w-64 shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar">
       <div className="flex h-16 items-center px-5">
         <span className="font-heading text-lg font-semibold text-primary">{APP_NAME}</span>
       </div>

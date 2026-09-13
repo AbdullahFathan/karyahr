@@ -28,6 +28,12 @@ export const PERMISSIONS = {
   LEAVE_TYPES_WRITE: 'leave:types:write',
   LEAVE_POLICIES_WRITE: 'leave:policies:write',
   NOTIFICATIONS_ME: 'notifications:me',
+  PAYROLL_COMPONENTS_WRITE: 'payroll:components:write',
+  PAYROLL_PROFILE_WRITE: 'payroll:profile:write',
+  PAYROLL_RUNS_WRITE: 'payroll:runs:write',
+  PAYROLL_RUNS_READ: 'payroll:runs:read',
+  PAYROLL_EXPORT: 'payroll:export',
+  PAYSLIPS_ME: 'payslips:me',
 } as const
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]

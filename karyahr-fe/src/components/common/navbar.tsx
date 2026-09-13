@@ -30,7 +30,7 @@ export function Navbar({ title }: NavbarProps) {
     : 'KH'
 
   return (
-    <header className="flex h-16 items-center justify-between gap-4 border-b bg-card px-6">
+    <header className="flex h-16 w-full shrink-0 items-center justify-between gap-4 border-b bg-card px-6">
       <h1 className="font-heading text-lg font-semibold">{title}</h1>
       <div className="flex items-center gap-3">
         <div className="relative hidden w-64 md:block">

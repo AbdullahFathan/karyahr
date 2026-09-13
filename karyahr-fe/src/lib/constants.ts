@@ -57,6 +57,14 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     ],
   },
   {
+    label: 'Pay',
+    items: [
+      { label: 'Salary components', to: '/payroll/components', permission: 'payroll:components:write' },
+      { label: 'Payroll runs', to: '/payroll/runs', permission: 'payroll:runs:read', end: true },
+      { label: 'My payslips', to: '/payslips', permission: 'payslips:me' },
+    ],
+  },
+  {
     label: 'Admin',
     items: [
       { label: 'Notifications', to: '/notifications', permission: 'notifications:me' },
@@ -84,6 +92,9 @@ export const PAGE_TITLES: Record<string, string> = {
   '/leave': 'My leave',
   '/leave/new': 'New leave request',
   '/leave/inbox': 'Leave inbox',
+  '/payroll/components': 'Salary components',
+  '/payroll/runs': 'Payroll runs',
+  '/payslips': 'My payslips',
   '/notifications': 'Notifications',
   '/admin/roles': 'Roles',
 }

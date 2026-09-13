@@ -4,6 +4,7 @@ import { AuthLayout } from '@/app/layouts/auth-layout'
 import { PublicLayout } from '@/app/layouts/public-layout'
 import { GuestOnly } from '@/features/auth/components/guest-only'
 import { RequireAuth } from '@/features/auth/components/require-auth'
+import { RequireAnyPermission } from '@/features/auth/components/require-any-permission'
 import { RequirePermission } from '@/features/auth/components/require-permission'
 import { LoginPage } from '@/features/auth/pages/login-page'
 import { DashboardPage } from '@/features/dashboard/pages/dashboard-page'
@@ -33,6 +34,13 @@ import {
   NewLeaveRequestPage,
 } from '@/features/leave'
 import { NotificationsPage } from '@/features/notifications'
+import {
+  MyPayslipsPage,
+  PayrollRunDetailPage,
+  PayrollRunsPage,
+  PayslipPage,
+  SalaryComponentsPage,
+} from '@/features/payroll'
 import { PERMISSIONS } from '@/lib/permissions'
 
 export const router = createBrowserRouter([
@@ -127,6 +135,29 @@ export const router = createBrowserRouter([
           {
             element: <RequirePermission permission={PERMISSIONS.LEAVE_REQUESTS_APPROVE} />,
             children: [{ path: '/leave/inbox', element: <LeaveInboxPage /> }],
+          },
+          {
+            element: <RequirePermission permission={PERMISSIONS.PAYROLL_COMPONENTS_WRITE} />,
+            children: [{ path: '/payroll/components', element: <SalaryComponentsPage /> }],
+          },
+          {
+            element: <RequirePermission permission={PERMISSIONS.PAYROLL_RUNS_READ} />,
+            children: [
+              { path: '/payroll/runs', element: <PayrollRunsPage /> },
+              { path: '/payroll/runs/:id', element: <PayrollRunDetailPage /> },
+            ],
+          },
+          {
+            element: <RequirePermission permission={PERMISSIONS.PAYSLIPS_ME} />,
+            children: [{ path: '/payslips', element: <MyPayslipsPage /> }],
+          },
+          {
+            element: (
+              <RequireAnyPermission
+                permissions={[PERMISSIONS.PAYSLIPS_ME, PERMISSIONS.PAYROLL_RUNS_READ]}
+              />
+            ),
+            children: [{ path: '/payslips/:id', element: <PayslipPage /> }],
           },
           {
             element: <RequirePermission permission={PERMISSIONS.NOTIFICATIONS_ME} />,
