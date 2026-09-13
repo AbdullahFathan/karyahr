@@ -1,0 +1,28 @@
+:root {
+  color-scheme: light;
+  --page: #f8f7fa;
+  --surface: #ffffff;
+  --text: #16151c;
+  --primary: #e11d48;
+  font-family: Urbanist, ui-sans-serif, system-ui, sans-serif;
+  color: var(--text);
+  background: var(--page);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+}
