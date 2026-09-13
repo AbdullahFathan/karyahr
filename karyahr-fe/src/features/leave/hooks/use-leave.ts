@@ -88,10 +88,11 @@ export function useMyLeaveRequests(query: PaginationQuery) {
   })
 }
 
-export function useLeaveInbox(query: PaginationQuery) {
+export function useLeaveInbox(query: PaginationQuery, enabled = true) {
   return useQuery({
     queryKey: queryKeys.leave.inbox(query),
     queryFn: () => listLeaveInbox(query),
+    enabled,
   })
 }
 

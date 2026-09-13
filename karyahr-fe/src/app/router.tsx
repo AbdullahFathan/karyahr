@@ -56,6 +56,15 @@ import {
   OnboardingProcessPage,
   OnboardingTemplatesPage,
 } from '@/features/onboarding'
+import {
+  CyclesPage,
+  GoalDetailPage,
+  GoalsPage,
+  HeatmapPage,
+  MyPerformancePage,
+  ReviewPage,
+  TeamDashboardPage,
+} from '@/features/performance'
 import { PERMISSIONS } from '@/lib/permissions'
 
 export const router = createBrowserRouter([
@@ -211,6 +220,56 @@ export const router = createBrowserRouter([
               { path: '/onboarding', element: <OnboardingDashboardPage /> },
               { path: '/onboarding/:employeeId', element: <OnboardingProcessPage /> },
             ],
+          },
+          {
+            element: <RequirePermission permission={PERMISSIONS.PERFORMANCE_GOALS_READ} />,
+            children: [{ path: '/performance/goals', element: <GoalsPage /> }],
+          },
+          {
+            element: <RequirePermission permission={PERMISSIONS.PERFORMANCE_GOALS_ME} />,
+            children: [{ path: '/performance/me', element: <MyPerformancePage /> }],
+          },
+          {
+            element: <RequirePermission permission={PERMISSIONS.PERFORMANCE_REVIEWS_ME} />,
+            children: [{ path: '/performance/cycles', element: <CyclesPage /> }],
+          },
+          {
+            element: <RequirePermission permission={PERMISSIONS.PERFORMANCE_DASHBOARD} />,
+            children: [
+              { path: '/performance/team', element: <TeamDashboardPage /> },
+              {
+                element: (
+                  <RequireAnyPermission
+                    permissions={[PERMISSIONS.PERFORMANCE_CYCLES_WRITE, PERMISSIONS.PERFORMANCE_GOALS_WRITE]}
+                  />
+                ),
+                children: [{ path: '/performance/heatmap', element: <HeatmapPage /> }],
+              },
+            ],
+          },
+          {
+            element: (
+              <RequireAnyPermission
+                permissions={[
+                  PERMISSIONS.PERFORMANCE_GOALS_ME,
+                  PERMISSIONS.PERFORMANCE_GOALS_READ,
+                  PERMISSIONS.PERFORMANCE_GOALS_WRITE,
+                ]}
+              />
+            ),
+            children: [{ path: '/performance/goals/:id', element: <GoalDetailPage /> }],
+          },
+          {
+            element: (
+              <RequireAnyPermission
+                permissions={[
+                  PERMISSIONS.PERFORMANCE_REVIEWS_ME,
+                  PERMISSIONS.PERFORMANCE_REVIEWS_READ,
+                  PERMISSIONS.PERFORMANCE_REVIEWS_WRITE,
+                ]}
+              />
+            ),
+            children: [{ path: '/performance/reviews/:id', element: <ReviewPage /> }],
           },
           {
             element: <RequirePermission permission={PERMISSIONS.NOTIFICATIONS_ME} />,

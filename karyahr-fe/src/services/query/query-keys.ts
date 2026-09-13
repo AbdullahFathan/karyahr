@@ -84,4 +84,24 @@ export const queryKeys = {
     me: ['onboarding', 'me'] as const,
     process: (employeeId: string) => ['onboarding', 'process', employeeId] as const,
   },
+  performance: {
+    all: ['performance'] as const,
+    goals: (filters: PaginationQuery & {
+      employeeId?: string
+      departmentId?: string
+      level?: string
+      status?: string
+      parentGoalId?: string
+    }) => ['performance', 'goals', filters] as const,
+    goalsMe: (filters: PaginationQuery) => ['performance', 'goals', 'me', filters] as const,
+    goal: (id: string) => ['performance', 'goal', id] as const,
+    cycles: ['performance', 'cycles'] as const,
+    cycle: (id: string) => ['performance', 'cycle', id] as const,
+    reviewsMe: ['performance', 'reviews', 'me'] as const,
+    review: (id: string) => ['performance', 'review', id] as const,
+    employeeReviews: (employeeId: string) => ['performance', 'reviews', 'employee', employeeId] as const,
+    team: (cycleId: string, managerId?: string) =>
+      ['performance', 'team', cycleId, managerId ?? 'self'] as const,
+    heatmap: (cycleId: string) => ['performance', 'heatmap', cycleId] as const,
+  },
 } as const

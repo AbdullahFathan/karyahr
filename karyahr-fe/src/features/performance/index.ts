@@ -1,1 +1,7 @@
-export {}
+export { GoalsPage } from '@/features/performance/pages/goals-page'
+export { GoalDetailPage } from '@/features/performance/pages/goal-detail-page'
+export { MyPerformancePage } from '@/features/performance/pages/my-performance-page'
+export { CyclesPage } from '@/features/performance/pages/cycles-page'
+export { ReviewPage } from '@/features/performance/pages/review-page'
+export { TeamDashboardPage } from '@/features/performance/pages/team-dashboard-page'
+export { HeatmapPage } from '@/features/performance/pages/heatmap-page'

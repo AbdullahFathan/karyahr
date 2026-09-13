@@ -30,10 +30,11 @@ function invalidateRecruitment() {
   ])
 }
 
-export function useJobs(filters: JobListFilters) {
+export function useJobs(filters: JobListFilters, enabled = true) {
   return useQuery({
     queryKey: queryKeys.recruitment.jobs(filters),
     queryFn: () => listJobs(filters),
+    enabled,
   })
 }
 

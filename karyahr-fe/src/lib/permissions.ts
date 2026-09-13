@@ -43,6 +43,15 @@ export const PERMISSIONS = {
   ONBOARDING_READ: 'onboarding:read',
   ONBOARDING_TASKS_COMPLETE: 'onboarding:tasks:complete',
   ONBOARDING_ME: 'onboarding:me',
+  PERFORMANCE_GOALS_READ: 'performance:goals:read',
+  PERFORMANCE_GOALS_WRITE: 'performance:goals:write',
+  PERFORMANCE_GOALS_APPROVE: 'performance:goals:approve',
+  PERFORMANCE_GOALS_ME: 'performance:goals:me',
+  PERFORMANCE_REVIEWS_READ: 'performance:reviews:read',
+  PERFORMANCE_REVIEWS_WRITE: 'performance:reviews:write',
+  PERFORMANCE_REVIEWS_ME: 'performance:reviews:me',
+  PERFORMANCE_CYCLES_WRITE: 'performance:cycles:write',
+  PERFORMANCE_DASHBOARD: 'performance:dashboard',
 } as const
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]

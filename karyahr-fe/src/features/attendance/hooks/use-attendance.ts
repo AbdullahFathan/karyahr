@@ -48,10 +48,11 @@ export function useCheckOut() {
   })
 }
 
-export function useAttendanceDashboard(filters: AttendanceDashboardFilters) {
+export function useAttendanceDashboard(filters: AttendanceDashboardFilters, enabled = true) {
   return useQuery({
     queryKey: queryKeys.attendance.dashboard(filters),
     queryFn: () => getAttendanceDashboard(filters),
+    enabled,
   })
 }
 

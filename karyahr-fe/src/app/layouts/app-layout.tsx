@@ -31,6 +31,12 @@ function pageTitle(pathname: string): string {
   if (pathname.startsWith('/onboarding/') && pathname !== '/onboarding/templates' && pathname !== '/onboarding/me') {
     return 'Onboarding process'
   }
+  if (pathname.startsWith('/performance/goals/') && pathname !== '/performance/goals') {
+    return 'Goal'
+  }
+  if (pathname.startsWith('/performance/reviews/')) {
+    return 'Performance review'
+  }
   return APP_NAME
 }
 

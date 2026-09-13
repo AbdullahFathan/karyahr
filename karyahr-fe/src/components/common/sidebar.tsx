@@ -17,9 +17,18 @@ export function Sidebar() {
       <Separator />
       <nav className="flex flex-1 flex-col gap-5 overflow-y-auto p-4">
         {NAV_GROUPS.map((group) => {
-          const items = group.items.filter(
-            (item) => item.to && (!item.permission || hasPermission(permissions, item.permission)),
-          )
+          const items = group.items.filter((item) => {
+            if (!item.to) {
+              return false
+            }
+            if (item.permission && !hasPermission(permissions, item.permission)) {
+              return false
+            }
+            if (item.anyOf && !item.anyOf.some((key) => hasPermission(permissions, key))) {
+              return false
+            }
+            return true
+          })
           if (items.length === 0) {
             return null
           }

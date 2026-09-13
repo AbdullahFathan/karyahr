@@ -11,6 +11,7 @@ export type NavItem = {
   readonly label: string
   readonly to?: string
   readonly permission?: string
+  readonly anyOf?: readonly string[]
   readonly end?: boolean
 }
 
@@ -71,6 +72,16 @@ export const NAV_GROUPS: readonly NavGroup[] = [
       { label: 'Onboarding', to: '/onboarding', permission: 'onboarding:read', end: true },
       { label: 'Templates', to: '/onboarding/templates', permission: 'onboarding:templates:write' },
       { label: 'My onboarding', to: '/onboarding/me', permission: 'onboarding:me' },
+      { label: 'Goals', to: '/performance/goals', permission: 'performance:goals:read' },
+      { label: 'My performance', to: '/performance/me', permission: 'performance:goals:me' },
+      { label: 'Cycles', to: '/performance/cycles', permission: 'performance:reviews:me' },
+      { label: 'Team dashboard', to: '/performance/team', permission: 'performance:dashboard' },
+      {
+        label: 'Heatmap',
+        to: '/performance/heatmap',
+        permission: 'performance:dashboard',
+        anyOf: ['performance:cycles:write', 'performance:goals:write'],
+      },
     ],
   },
   {
@@ -109,6 +120,11 @@ export const PAGE_TITLES: Record<string, string> = {
   '/onboarding': 'Onboarding',
   '/onboarding/templates': 'Onboarding templates',
   '/onboarding/me': 'My onboarding',
+  '/performance/goals': 'Goals',
+  '/performance/me': 'My performance',
+  '/performance/cycles': 'Review cycles',
+  '/performance/team': 'Team dashboard',
+  '/performance/heatmap': 'Performance heatmap',
   '/notifications': 'Notifications',
   '/admin/roles': 'Roles',
 }
