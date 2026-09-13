@@ -20,6 +20,10 @@ export type HireCandidateInput = {
   readonly contractType: ContractType;
 };
 
+export type HireCandidateResult = ApplicationDetail & {
+  readonly temporaryPassword: string;
+};
+
 /**
  * Converts an accepted candidate into an employee, login, and onboarding process.
  */
@@ -38,7 +42,7 @@ export class ConvertCandidateUseCase {
     applicationId: string,
     input: HireCandidateInput,
     actorUserId: string,
-  ): Promise<ApplicationDetail> {
+  ): Promise<HireCandidateResult> {
     if (!(CONTRACT_TYPES as readonly string[]).includes(input.contractType)) {
       throw new ValidationError("Invalid contract type");
     }
@@ -77,7 +81,7 @@ export class ConvertCandidateUseCase {
       },
       actorUserId,
     );
-    await this.provisionUser.provision({
+    const provisioned = await this.provisionUser.provision({
       email: application.candidate.email,
       employeeId: employee.id,
     });
@@ -105,6 +109,6 @@ export class ConvertCandidateUseCase {
       action: "hire",
       metadata: { employeeId: employee.id },
     });
-    return hired;
+    return { ...hired, temporaryPassword: provisioned.temporaryPassword };
   }
 }

@@ -19,6 +19,18 @@ function pageTitle(pathname: string): string {
   if (pathname.startsWith('/payslips/')) {
     return 'Payslip'
   }
+  if (pathname.endsWith('/edit') && pathname.startsWith('/recruitment/jobs/')) {
+    return 'Edit job'
+  }
+  if (pathname.startsWith('/recruitment/jobs/') && pathname !== '/recruitment/jobs/new') {
+    return 'Job'
+  }
+  if (pathname.startsWith('/recruitment/applications/')) {
+    return 'Application'
+  }
+  if (pathname.startsWith('/onboarding/') && pathname !== '/onboarding/templates' && pathname !== '/onboarding/me') {
+    return 'Onboarding process'
+  }
   return APP_NAME
 }
 

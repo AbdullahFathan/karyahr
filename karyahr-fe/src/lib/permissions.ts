@@ -34,6 +34,15 @@ export const PERMISSIONS = {
   PAYROLL_RUNS_READ: 'payroll:runs:read',
   PAYROLL_EXPORT: 'payroll:export',
   PAYSLIPS_ME: 'payslips:me',
+  RECRUITMENT_JOBS_READ: 'recruitment:jobs:read',
+  RECRUITMENT_JOBS_WRITE: 'recruitment:jobs:write',
+  RECRUITMENT_APPLICATIONS_READ: 'recruitment:applications:read',
+  RECRUITMENT_APPLICATIONS_WRITE: 'recruitment:applications:write',
+  RECRUITMENT_HIRE: 'recruitment:hire',
+  ONBOARDING_TEMPLATES_WRITE: 'onboarding:templates:write',
+  ONBOARDING_READ: 'onboarding:read',
+  ONBOARDING_TASKS_COMPLETE: 'onboarding:tasks:complete',
+  ONBOARDING_ME: 'onboarding:me',
 } as const
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]

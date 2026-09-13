@@ -1,1 +1,8 @@
 export { CareersPage } from '@/features/recruitment/pages/careers-page'
+export { CareerDetailPage } from '@/features/recruitment/pages/career-detail-page'
+export { CareerApplyPage } from '@/features/recruitment/pages/career-apply-page'
+export { JobsPage } from '@/features/recruitment/pages/jobs-page'
+export { JobCreatePage } from '@/features/recruitment/pages/job-create-page'
+export { JobEditPage } from '@/features/recruitment/pages/job-edit-page'
+export { JobDetailPage } from '@/features/recruitment/pages/job-detail-page'
+export { ApplicationDetailPage } from '@/features/recruitment/pages/application-detail-page'

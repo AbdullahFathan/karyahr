@@ -64,4 +64,24 @@ export const queryKeys = {
     me: (filters: PaginationQuery & { from?: string; to?: string }) => ['payslips', 'me', filters] as const,
     detail: (id: string) => ['payslips', id] as const,
   },
+  recruitment: {
+    all: ['recruitment'] as const,
+    jobs: (filters: PaginationQuery & { status?: string }) => ['recruitment', 'jobs', filters] as const,
+    job: (id: string) => ['recruitment', 'job', id] as const,
+    applications: (jobId: string, filters: PaginationQuery) =>
+      ['recruitment', 'job', jobId, 'applications', filters] as const,
+    application: (id: string) => ['recruitment', 'application', id] as const,
+  },
+  careers: {
+    all: ['careers'] as const,
+    list: ['careers', 'list'] as const,
+    detail: (slug: string) => ['careers', slug] as const,
+  },
+  onboarding: {
+    all: ['onboarding'] as const,
+    templates: ['onboarding', 'templates'] as const,
+    dashboard: (filters: PaginationQuery) => ['onboarding', 'dashboard', filters] as const,
+    me: ['onboarding', 'me'] as const,
+    process: (employeeId: string) => ['onboarding', 'process', employeeId] as const,
+  },
 } as const

@@ -65,6 +65,15 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     ],
   },
   {
+    label: 'Talent',
+    items: [
+      { label: 'Jobs', to: '/recruitment/jobs', permission: 'recruitment:jobs:read' },
+      { label: 'Onboarding', to: '/onboarding', permission: 'onboarding:read', end: true },
+      { label: 'Templates', to: '/onboarding/templates', permission: 'onboarding:templates:write' },
+      { label: 'My onboarding', to: '/onboarding/me', permission: 'onboarding:me' },
+    ],
+  },
+  {
     label: 'Admin',
     items: [
       { label: 'Notifications', to: '/notifications', permission: 'notifications:me' },
@@ -95,6 +104,11 @@ export const PAGE_TITLES: Record<string, string> = {
   '/payroll/components': 'Salary components',
   '/payroll/runs': 'Payroll runs',
   '/payslips': 'My payslips',
+  '/recruitment/jobs': 'Jobs',
+  '/recruitment/jobs/new': 'Create job',
+  '/onboarding': 'Onboarding',
+  '/onboarding/templates': 'Onboarding templates',
+  '/onboarding/me': 'My onboarding',
   '/notifications': 'Notifications',
   '/admin/roles': 'Roles',
 }

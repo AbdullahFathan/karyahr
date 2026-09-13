@@ -9,7 +9,6 @@ import { RequirePermission } from '@/features/auth/components/require-permission
 import { LoginPage } from '@/features/auth/pages/login-page'
 import { DashboardPage } from '@/features/dashboard/pages/dashboard-page'
 import { ProfilePage } from '@/features/profile/pages/profile-page'
-import { CareersPage } from '@/features/recruitment/pages/careers-page'
 import { EmployeesPage } from '@/features/employees/pages/employees-page'
 import { EmployeeCreatePage } from '@/features/employees/pages/employee-create-page'
 import { EmployeeDetailPage } from '@/features/employees/pages/employee-detail-page'
@@ -41,6 +40,22 @@ import {
   PayslipPage,
   SalaryComponentsPage,
 } from '@/features/payroll'
+import {
+  ApplicationDetailPage,
+  CareerApplyPage,
+  CareerDetailPage,
+  CareersPage,
+  JobCreatePage,
+  JobDetailPage,
+  JobEditPage,
+  JobsPage,
+} from '@/features/recruitment'
+import {
+  MyOnboardingPage,
+  OnboardingDashboardPage,
+  OnboardingProcessPage,
+  OnboardingTemplatesPage,
+} from '@/features/onboarding'
 import { PERMISSIONS } from '@/lib/permissions'
 
 export const router = createBrowserRouter([
@@ -55,7 +70,11 @@ export const router = createBrowserRouter([
   },
   {
     element: <PublicLayout />,
-    children: [{ path: '/careers', element: <CareersPage /> }],
+    children: [
+      { path: '/careers', element: <CareersPage /> },
+      { path: '/careers/:slug', element: <CareerDetailPage /> },
+      { path: '/careers/:slug/apply', element: <CareerApplyPage /> },
+    ],
   },
   {
     element: <RequireAuth />,
@@ -158,6 +177,40 @@ export const router = createBrowserRouter([
               />
             ),
             children: [{ path: '/payslips/:id', element: <PayslipPage /> }],
+          },
+          {
+            element: <RequirePermission permission={PERMISSIONS.RECRUITMENT_JOBS_READ} />,
+            children: [{ path: '/recruitment/jobs', element: <JobsPage /> }],
+          },
+          {
+            element: <RequirePermission permission={PERMISSIONS.RECRUITMENT_JOBS_WRITE} />,
+            children: [
+              { path: '/recruitment/jobs/new', element: <JobCreatePage /> },
+              { path: '/recruitment/jobs/:id/edit', element: <JobEditPage /> },
+            ],
+          },
+          {
+            element: <RequirePermission permission={PERMISSIONS.RECRUITMENT_JOBS_READ} />,
+            children: [{ path: '/recruitment/jobs/:id', element: <JobDetailPage /> }],
+          },
+          {
+            element: <RequirePermission permission={PERMISSIONS.RECRUITMENT_APPLICATIONS_READ} />,
+            children: [{ path: '/recruitment/applications/:id', element: <ApplicationDetailPage /> }],
+          },
+          {
+            element: <RequirePermission permission={PERMISSIONS.ONBOARDING_TEMPLATES_WRITE} />,
+            children: [{ path: '/onboarding/templates', element: <OnboardingTemplatesPage /> }],
+          },
+          {
+            element: <RequirePermission permission={PERMISSIONS.ONBOARDING_ME} />,
+            children: [{ path: '/onboarding/me', element: <MyOnboardingPage /> }],
+          },
+          {
+            element: <RequirePermission permission={PERMISSIONS.ONBOARDING_READ} />,
+            children: [
+              { path: '/onboarding', element: <OnboardingDashboardPage /> },
+              { path: '/onboarding/:employeeId', element: <OnboardingProcessPage /> },
+            ],
           },
           {
             element: <RequirePermission permission={PERMISSIONS.NOTIFICATIONS_ME} />,

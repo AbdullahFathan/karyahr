@@ -163,8 +163,26 @@ export const recruitmentOpenApiPaths: OpenApiPaths = {
       summary: "Convert accepted candidate to employee",
       parameters: idPath,
       requestBody: jsonBody(hireCandidateSchema),
-      successStatus: "201",
-      successDescription: "Hired employee",
+      successStatus: "200",
+      successDescription: "Hired application with one-time temporary password",
+      successContent: {
+        "application/json": {
+          schema: {
+            type: "object",
+            required: ["data"],
+            properties: {
+              data: {
+                type: "object",
+                additionalProperties: true,
+                required: ["temporaryPassword"],
+                properties: {
+                  temporaryPassword: { type: "string" },
+                },
+              },
+            },
+          },
+        },
+      },
     }),
   }),
   "/onboarding/templates": pathItem({

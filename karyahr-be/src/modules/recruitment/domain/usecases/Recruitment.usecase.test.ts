@@ -500,6 +500,40 @@ describe("ConvertCandidateUseCase", () => {
       ),
     ).rejects.toBeInstanceOf(ConflictError);
   });
+
+  test("returns the one-time temporary password", async () => {
+    const applications = new MemoryApplications();
+    await applications.create({ jobPostingId: "job1", candidateId: "c1", stageId: "s1" });
+    const templates = new MemoryTemplates({
+      id: "tmpl",
+      name: "Default",
+      positionId: "p1",
+      items: [],
+    });
+    const useCase = new ConvertCandidateUseCase(
+      new MemoryJobs({ ...posting }),
+      applications,
+      new MemoryHire(),
+      new MemoryProvision(),
+      new StartOnboardingProcessUseCase(templates, new MemoryProcesses()),
+      new MemoryDispatcher(),
+      new MemoryAudit(),
+    );
+    const result = await useCase.execute(
+      "a-1",
+      {
+        birthDate: new Date("1990-01-01"),
+        address: "Jakarta",
+        emergencyContact: "081",
+        joinedAt: new Date("2026-01-01"),
+        contractType: "PERMANENT",
+      },
+      "u-hr",
+    );
+    expect(result.status).toBe("HIRED");
+    expect(result.employeeId).toBe("e-new");
+    expect(result.temporaryPassword).toBe("temp-pass");
+  });
 });
 
 describe("CompleteOnboardingTaskUseCase", () => {
