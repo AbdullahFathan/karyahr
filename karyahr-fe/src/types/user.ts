@@ -9,6 +9,7 @@ export type MeEmployee = {
   readonly id: string
   readonly fullName: string
   readonly employeeNumber: string
+  readonly status: string
 }
 
 export type MeResponse = {

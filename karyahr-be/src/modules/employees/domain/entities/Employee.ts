@@ -67,3 +67,13 @@ export type EmployeeChangeRequest = {
   readonly reviewerUserId: string | null;
   readonly reviewNote: string | null;
 };
+
+export type ChangeRequestInboxEmployee = {
+  readonly id: string;
+  readonly fullName: string;
+  readonly employeeNumber: string;
+};
+
+export type ChangeRequestInboxItem = EmployeeChangeRequest & {
+  readonly employee: ChangeRequestInboxEmployee;
+};

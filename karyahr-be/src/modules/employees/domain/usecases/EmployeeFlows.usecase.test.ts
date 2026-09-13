@@ -2,7 +2,13 @@ import { describe, expect, test } from "bun:test";
 import type { IAuditLogRepository } from "../../../../shared/audit/IAuditLogRepository";
 import { ForbiddenError, NotFoundError, ValidationError } from "../../../../shared/errors/app-error";
 import { requireAnyPermission, requirePermission } from "../../../../shared/middleware/require-permission";
-import type { Employee, EmployeeChangeRequest, EssPayload } from "../entities/Employee";
+import type {
+  ChangeRequestInboxItem,
+  ChangeRequestStatus,
+  Employee,
+  EmployeeChangeRequest,
+  EssPayload,
+} from "../entities/Employee";
 import type {
   IEmployeeChangeRequestRepository,
   IEmployeeRepository,
@@ -11,6 +17,7 @@ import type {
 import {
   ApproveChangeRequestUseCase,
   CreateChangeRequestUseCase,
+  ListChangeRequestsUseCase,
   ListMyChangeRequestsUseCase,
   RejectChangeRequestUseCase,
 } from "./EmployeeChangeRequest.usecase";
@@ -88,6 +95,14 @@ class MemoryRequests implements IEmployeeChangeRequestRepository {
   async listByEmployee(): Promise<EmployeeChangeRequest[]> {
     return this.rows;
   }
+  async listInbox(status: ChangeRequestStatus): Promise<ChangeRequestInboxItem[]> {
+    return this.rows
+      .filter((row) => row.status === status)
+      .map((row) => ({
+        ...row,
+        employee: { id: "e1", fullName: "Siti", employeeNumber: "EMP-1" },
+      }));
+  }
   async review(
     id: string,
     input: {
@@ -153,6 +168,15 @@ describe("RejectChangeRequestUseCase", () => {
     );
     expect(rejected.status).toBe("REJECTED");
     expect(await new ListMyChangeRequestsUseCase(requests).execute("e1")).toHaveLength(1);
+  });
+
+  test("lists pending inbox items", async () => {
+    const requests = new MemoryRequests();
+    await requests.create({ employeeId: "e1", payload: { phone: "083" } });
+    const inbox = await new ListChangeRequestsUseCase(requests).execute("PENDING");
+    expect(inbox).toHaveLength(1);
+    expect(inbox[0]?.employee.fullName).toBe("Siti");
+    expect(await new ListChangeRequestsUseCase(requests).execute("APPROVED")).toHaveLength(0);
   });
 
   test("throws when the request is missing or already reviewed", async () => {

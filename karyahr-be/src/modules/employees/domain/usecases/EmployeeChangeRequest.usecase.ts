@@ -1,6 +1,11 @@
 import { NotFoundError, ValidationError } from "../../../../shared/errors/app-error";
 import type { IAuditLogRepository } from "../../../../shared/audit/IAuditLogRepository";
-import type { EmployeeChangeRequest, EssPayload } from "../entities/Employee";
+import type {
+  ChangeRequestInboxItem,
+  ChangeRequestStatus,
+  EmployeeChangeRequest,
+  EssPayload,
+} from "../entities/Employee";
 import { parseEssPayload } from "../invariants";
 import type {
   IEmployeeChangeRequestRepository,
@@ -47,6 +52,17 @@ export class ListMyChangeRequestsUseCase {
 
   execute(employeeId: string): Promise<readonly EmployeeChangeRequest[]> {
     return this.requests.listByEmployee(employeeId);
+  }
+}
+
+/**
+ * Lists change requests for HR review, filtered by status.
+ */
+export class ListChangeRequestsUseCase {
+  constructor(private readonly requests: IEmployeeChangeRequestRepository) {}
+
+  execute(status: ChangeRequestStatus): Promise<readonly ChangeRequestInboxItem[]> {
+    return this.requests.listInbox(status);
   }
 }
 

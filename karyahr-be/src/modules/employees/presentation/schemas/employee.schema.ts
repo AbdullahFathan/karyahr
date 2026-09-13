@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  CHANGE_REQUEST_STATUSES,
   CONTRACT_TYPES,
   DOCUMENT_TYPES,
   EMPLOYEE_STATUSES,
@@ -58,6 +59,10 @@ export const reviewChangeRequestSchema = z.object({
   reviewNote: z.string().nullable().optional(),
 });
 
+export const listChangeRequestsQuerySchema = z.object({
+  status: z.enum(CHANGE_REQUEST_STATUSES).optional(),
+});
+
 export const offboardEmployeeSchema = z.object({
   reason: z.string().min(1).optional(),
 });
@@ -69,4 +74,5 @@ export type UpdateEmployeeDto = z.infer<typeof updateEmployeeSchema>;
 export type ListEmployeesQueryDto = z.infer<typeof listEmployeesQuerySchema>;
 export type CreateMutationDto = z.infer<typeof createMutationSchema>;
 export type CreateChangeRequestDto = z.infer<typeof createChangeRequestSchema>;
+export type ListChangeRequestsQueryDto = z.infer<typeof listChangeRequestsQuerySchema>;
 export type OffboardEmployeeDto = z.infer<typeof offboardEmployeeSchema>;

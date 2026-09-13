@@ -3,6 +3,9 @@ import axios from 'axios'
 import { toast } from 'sonner'
 import { getApiErrorMessage } from '@/lib/api-error'
 
+/**
+ * Creates a QueryClient with shared mutation error toasts.
+ */
 export function createQueryClient(): QueryClient {
   return new QueryClient({
     mutationCache: new MutationCache({
@@ -28,3 +31,5 @@ export function createQueryClient(): QueryClient {
     },
   })
 }
+
+export const queryClient = createQueryClient()

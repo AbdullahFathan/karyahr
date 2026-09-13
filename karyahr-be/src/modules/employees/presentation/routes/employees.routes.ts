@@ -18,6 +18,7 @@ import {
 import {
   ApproveChangeRequestUseCase,
   CreateChangeRequestUseCase,
+  ListChangeRequestsUseCase,
   ListMyChangeRequestsUseCase,
   RejectChangeRequestUseCase,
 } from "../../domain/usecases/EmployeeChangeRequest.usecase";
@@ -75,6 +76,7 @@ export function createEmployeeRouter(): Router {
     deleteDocument: new DeleteEmployeeDocumentUseCase(documents, storage, audit),
     createChangeRequest: new CreateChangeRequestUseCase(employees, changeRequests, audit),
     listMyChangeRequests: new ListMyChangeRequestsUseCase(changeRequests),
+    listChangeRequests: new ListChangeRequestsUseCase(changeRequests),
     approveChangeRequest: new ApproveChangeRequestUseCase(employees, changeRequests, audit),
     rejectChangeRequest: new RejectChangeRequestUseCase(changeRequests, audit),
     offboardEmployee: new OffboardEmployeeUseCase(employees, users, refreshTokens, audit),
@@ -98,6 +100,12 @@ export function createEmployeeRouter(): Router {
     requireAuth,
     requirePermission(PERMISSIONS.EMPLOYEES_CHANGE_REQUEST_READ),
     controller.listMyChangeRequests,
+  );
+  router.get(
+    "/employees/change-requests",
+    requireAuth,
+    requirePermission(PERMISSIONS.EMPLOYEES_CHANGE_REQUEST_REVIEW),
+    controller.listChangeRequests,
   );
   router.post(
     "/employees/change-requests/:id/approve",

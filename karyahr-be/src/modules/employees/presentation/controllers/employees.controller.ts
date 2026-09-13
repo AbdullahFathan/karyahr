@@ -8,6 +8,7 @@ import type { DocumentType } from "../../domain/entities/Employee";
 import type {
   ApproveChangeRequestUseCase,
   CreateChangeRequestUseCase,
+  ListChangeRequestsUseCase,
   ListMyChangeRequestsUseCase,
   RejectChangeRequestUseCase,
 } from "../../domain/usecases/EmployeeChangeRequest.usecase";
@@ -33,6 +34,7 @@ import {
   createEmployeeSchema,
   createMutationSchema,
   documentTypeSchema,
+  listChangeRequestsQuerySchema,
   listEmployeesQuerySchema,
   offboardEmployeeSchema,
   reviewChangeRequestSchema,
@@ -63,6 +65,7 @@ export function createEmployeeController(deps: {
   readonly deleteDocument: DeleteEmployeeDocumentUseCase;
   readonly createChangeRequest: CreateChangeRequestUseCase;
   readonly listMyChangeRequests: ListMyChangeRequestsUseCase;
+  readonly listChangeRequests: ListChangeRequestsUseCase;
   readonly approveChangeRequest: ApproveChangeRequestUseCase;
   readonly rejectChangeRequest: RejectChangeRequestUseCase;
   readonly offboardEmployee: OffboardEmployeeUseCase;
@@ -194,6 +197,12 @@ export function createEmployeeController(deps: {
     res.status(200).json({ data });
   });
 
+  const listChangeRequests = asyncHandler(async (req: Request, res: Response) => {
+    const query = listChangeRequestsQuerySchema.parse(req.query);
+    const data = await deps.listChangeRequests.execute(query.status ?? "PENDING");
+    res.status(200).json({ data });
+  });
+
   const approveChangeRequest = asyncHandler(async (req: Request, res: Response) => {
     const body = reviewChangeRequestSchema.parse(req.body ?? {});
     const request = await deps.approveChangeRequest.execute(
@@ -229,6 +238,7 @@ export function createEmployeeController(deps: {
     deleteDocument,
     createChangeRequest,
     listMyChangeRequests,
+    listChangeRequests,
     approveChangeRequest,
     rejectChangeRequest,
   };

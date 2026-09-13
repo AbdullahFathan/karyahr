@@ -1,9 +1,14 @@
 import { NavLink } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { APP_NAME, NAV_GROUPS } from '@/lib/constants'
+import { displayName, hasPermission, primaryRole } from '@/lib/auth'
 import { Separator } from '@/components/ui/separator'
+import { useAuth } from '@/features/auth/hooks/use-auth'
 
 export function Sidebar() {
+  const { data } = useAuth()
+  const permissions = data?.permissions ?? []
+
   return (
     <aside className="flex w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar">
       <div className="flex h-16 items-center px-5">
@@ -11,17 +16,23 @@ export function Sidebar() {
       </div>
       <Separator />
       <nav className="flex flex-1 flex-col gap-5 overflow-y-auto p-4">
-        {NAV_GROUPS.map((group) => (
-          <div key={group.label} className="flex flex-col gap-1">
-            <p className="px-3 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-              {group.label}
-            </p>
-            <div className="flex flex-col gap-0.5">
-              {group.items.map((item) =>
-                item.enabled && item.to ? (
+        {NAV_GROUPS.map((group) => {
+          const items = group.items.filter(
+            (item) => item.to && (!item.permission || hasPermission(permissions, item.permission)),
+          )
+          if (items.length === 0) {
+            return null
+          }
+          return (
+            <div key={group.label} className="flex flex-col gap-1">
+              <p className="px-3 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                {group.label}
+              </p>
+              <div className="flex flex-col gap-0.5">
+                {items.map((item) => (
                   <NavLink
                     key={item.label}
-                    to={item.to}
+                    to={item.to ?? '/'}
                     end={item.to === '/'}
                     className={({ isActive }) =>
                       cn(
@@ -34,23 +45,16 @@ export function Sidebar() {
                   >
                     {item.label}
                   </NavLink>
-                ) : (
-                  <span
-                    key={item.label}
-                    className="pointer-events-none rounded-lg px-3 py-2 text-sm text-muted-foreground opacity-60"
-                  >
-                    {item.label}
-                  </span>
-                ),
-              )}
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </nav>
       <Separator />
       <div className="flex flex-col gap-0.5 px-5 py-4">
-        <p className="text-sm font-medium">Signed in</p>
-        <p className="text-xs text-muted-foreground">Name and role load in Phase 1</p>
+        <p className="text-sm font-medium">{data ? displayName(data) : 'Signed in'}</p>
+        <p className="text-xs text-muted-foreground">{data ? primaryRole(data) : ''}</p>
       </div>
     </aside>
   )

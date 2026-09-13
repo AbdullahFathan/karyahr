@@ -1,3 +1,7 @@
 export { LoginPage } from '@/features/auth/pages/login-page'
 export { useAuth } from '@/features/auth/hooks/use-auth'
 export { useLogin } from '@/features/auth/hooks/use-login'
+export { useLogout } from '@/features/auth/hooks/use-logout'
+export { RequireAuth } from '@/features/auth/components/require-auth'
+export { GuestOnly } from '@/features/auth/components/guest-only'
+export { RequirePermission } from '@/features/auth/components/require-permission'

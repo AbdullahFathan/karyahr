@@ -3,6 +3,7 @@ import {
   createEmployeeSchema,
   createMutationSchema,
   documentTypeSchema,
+  listChangeRequestsQuerySchema,
   listEmployeesQuerySchema,
   offboardEmployeeSchema,
   reviewChangeRequestSchema,
@@ -45,6 +46,15 @@ export const employeesOpenApiPaths: OpenApiPaths = {
       requestBody: jsonBody(createChangeRequestSchema),
       successStatus: "201",
       successDescription: "Created change request",
+    }),
+  }),
+  "/employees/change-requests": pathItem({
+    get: operation({
+      tag: "Employees",
+      summary: "List profile change requests for HR review",
+      parameters: queryParams(listChangeRequestsQuerySchema),
+      successStatus: "200",
+      successDescription: "Change request inbox",
     }),
   }),
   "/employees/change-requests/{id}/approve": pathItem({

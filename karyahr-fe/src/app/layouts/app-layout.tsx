@@ -3,9 +3,19 @@ import { Navbar } from '@/components/common/navbar'
 import { Sidebar } from '@/components/common/sidebar'
 import { APP_NAME, PAGE_TITLES } from '@/lib/constants'
 
+function pageTitle(pathname: string): string {
+  if (PAGE_TITLES[pathname]) {
+    return PAGE_TITLES[pathname]
+  }
+  if (pathname.startsWith('/employees/') && pathname !== '/employees/new') {
+    return 'Employee'
+  }
+  return APP_NAME
+}
+
 export function AppLayout() {
   const { pathname } = useLocation()
-  const title = PAGE_TITLES[pathname] ?? APP_NAME
+  const title = pageTitle(pathname)
 
   return (
     <div className="flex min-h-svh bg-background">

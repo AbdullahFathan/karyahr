@@ -10,7 +10,7 @@ export const BRAND = {
 export type NavItem = {
   readonly label: string
   readonly to?: string
-  readonly enabled: boolean
+  readonly permission?: string
 }
 
 export type NavGroup = {
@@ -22,43 +22,38 @@ export const NAV_GROUPS: readonly NavGroup[] = [
   {
     label: 'Overview',
     items: [
-      { label: 'Dashboard', to: '/', enabled: true },
-      { label: 'Profile', to: '/me', enabled: true },
+      { label: 'Dashboard', to: '/' },
+      { label: 'Profile', to: '/me', permission: 'employees:me:read' },
     ],
   },
   {
     label: 'People',
     items: [
-      { label: 'Employees', enabled: false },
-      { label: 'Organization', enabled: false },
-    ],
-  },
-  {
-    label: 'Time',
-    items: [
-      { label: 'Attendance', enabled: false },
-      { label: 'Leave', enabled: false },
-    ],
-  },
-  {
-    label: 'Pay',
-    items: [{ label: 'Payroll', enabled: false }],
-  },
-  {
-    label: 'Talent',
-    items: [
-      { label: 'Recruitment', enabled: false },
-      { label: 'Onboarding', enabled: false },
-      { label: 'Performance', enabled: false },
+      { label: 'Employees', to: '/employees', permission: 'employees:read' },
+      {
+        label: 'Change requests',
+        to: '/employees/change-requests',
+        permission: 'employees:change-request:review',
+      },
+      { label: 'Departments', to: '/org/departments', permission: 'org:read' },
+      { label: 'Positions', to: '/org/positions', permission: 'org:read' },
+      { label: 'Org chart', to: '/org/tree', permission: 'org:read' },
     ],
   },
   {
     label: 'Admin',
-    items: [{ label: 'Roles', enabled: false }],
+    items: [{ label: 'Roles', to: '/admin/roles', permission: 'auth:roles:read' }],
   },
 ] as const
 
 export const PAGE_TITLES: Record<string, string> = {
   '/': 'Dashboard',
   '/me': 'My profile',
+  '/employees': 'Employees',
+  '/employees/new': 'Create employee',
+  '/employees/change-requests': 'Change requests',
+  '/org/departments': 'Departments',
+  '/org/positions': 'Positions',
+  '/org/tree': 'Org chart',
+  '/admin/roles': 'Roles',
 }

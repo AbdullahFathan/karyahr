@@ -1,5 +1,7 @@
 import type { PaginationParams } from "../../../../shared/utils/pagination";
 import type {
+  ChangeRequestInboxItem,
+  ChangeRequestStatus,
   Employee,
   EmployeeChangeRequest,
   EmployeeDocument,
@@ -69,6 +71,7 @@ export type IEmployeeChangeRequestRepository = {
   }): Promise<EmployeeChangeRequest>;
   findById(id: string): Promise<EmployeeChangeRequest | null>;
   listByEmployee(employeeId: string): Promise<readonly EmployeeChangeRequest[]>;
+  listInbox(status: ChangeRequestStatus): Promise<readonly ChangeRequestInboxItem[]>;
   review(
     id: string,
     input: {

@@ -1,5 +1,7 @@
 import type { Prisma, PrismaClient } from "../../../../prisma/generated/prisma/client";
 import type {
+  ChangeRequestInboxItem,
+  ChangeRequestStatus,
   Employee,
   EmployeeChangeRequest,
   EmployeeDocument,
@@ -223,6 +225,25 @@ export class PrismaEmployeeChangeRequestRepository implements IEmployeeChangeReq
       orderBy: { createdAt: "desc" },
     });
     return rows.map((row) => ({ ...row, payload: toPayload(row.payload) }));
+  }
+
+  async listInbox(status: ChangeRequestStatus): Promise<ChangeRequestInboxItem[]> {
+    const rows = await this.prisma.employeeChangeRequest.findMany({
+      where: { status },
+      orderBy: { createdAt: "desc" },
+      include: {
+        employee: { select: { id: true, fullName: true, employeeNumber: true } },
+      },
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      employeeId: row.employeeId,
+      payload: toPayload(row.payload),
+      status: row.status,
+      reviewerUserId: row.reviewerUserId,
+      reviewNote: row.reviewNote,
+      employee: row.employee,
+    }));
   }
 
   async review(

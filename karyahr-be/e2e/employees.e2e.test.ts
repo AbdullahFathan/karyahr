@@ -149,6 +149,22 @@ describe("employees E2E", () => {
     const mineBody = (await mine.json()) as { data: readonly ChangeRequestJson[] };
     expect(mineBody.data.some((item) => item.id === pending.id)).toBe(true);
 
+    const inboxRes = await admin.request("/employees/change-requests?status=PENDING");
+    expect(inboxRes.status).toBe(200);
+    const inbox = (await inboxRes.json()) as {
+      data: readonly {
+        id: string;
+        status: string;
+        employee: { id: string; fullName: string; employeeNumber: string };
+      }[];
+    };
+    expect(inbox.data.some((item) => item.id === pending.id && item.employee.id === me.id)).toBe(
+      true,
+    );
+
+    const forbiddenInbox = await ess.request("/employees/change-requests");
+    expect(forbiddenInbox.status).toBe(403);
+
     const approveRes = await admin.request(`/employees/change-requests/${pending.id}/approve`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

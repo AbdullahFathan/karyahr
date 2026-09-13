@@ -1,5 +1,6 @@
 import axios, { type AxiosInstance } from 'axios'
 import { endpoints } from '@/services/api/endpoints'
+import { queryClient } from '@/services/query/query-client'
 
 const SKIP_REFRESH_PATHS = new Set<string>([
   endpoints.auth.login,
@@ -33,6 +34,7 @@ export function attachInterceptors(client: AxiosInstance): void {
       }
 
       if (original.headers.get?.('X-Retry-After-Refresh') === '1') {
+        await expireSessionIfNeeded(client)
         return Promise.reject(error)
       }
 
@@ -41,10 +43,24 @@ export function attachInterceptors(client: AxiosInstance): void {
         original.headers.set('X-Retry-After-Refresh', '1')
         return client.request(original)
       } catch {
+        await expireSessionIfNeeded(client)
         return Promise.reject(error)
       }
     },
   )
+}
+
+async function expireSessionIfNeeded(client: AxiosInstance): Promise<void> {
+  if (window.location.pathname === '/login') {
+    return
+  }
+  try {
+    await client.post(endpoints.auth.logout)
+  } catch {
+    // Cookies may already be invalid.
+  }
+  queryClient.clear()
+  window.location.assign('/login')
 }
 
 function pathOf(url: string): string {
