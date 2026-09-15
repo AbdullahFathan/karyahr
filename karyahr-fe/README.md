@@ -1,50 +1,126 @@
 # KaryaHR frontend
 
-React + Vite + TypeScript app for KaryaHR. Runtime: **Bun**.
+Aplikasi web KaryaHR: HR admin, manager, recruiter, employee self-service (ESS), dan portal karir publik.
+
+React 19 + Vite + TypeScript + Tailwind CSS + shadcn/ui. Runtime **Bun**. Data lewat TanStack Query dan Axios.
+
+Ikhtisar seluruh repo: [`../Readme.md`](../Readme.md). API: [`../karyahr-be`](../karyahr-be).
+
+Tidak ada Vite proxy. Browser memanggil API langsung. Cookie session memakai `withCredentials: true`.
+
+## Stack
+
+| Layer | Teknologi |
+|---|---|
+| Runtime | Bun |
+| UI | React 19, Vite 8, Tailwind 4, shadcn/ui, Radix, Lucide |
+| Routing | React Router 7 |
+| Data | TanStack Query, Axios |
+| Validasi | Zod |
+
+## Struktur
+
+```
+src/
+  app/                 entry, router, layouts, providers
+  components/ui/       shadcn
+  components/common/   sidebar, navbar, pagination
+  features/<nama>/     pages, hooks, api, schema
+  lib/                 env, permissions, auth helpers, upload allowlist
+  services/api/        Axios client + interceptors
+```
+
+Setiap fitur biasanya: `pages/`, `hooks/`, `api/`, plus `schema.ts` / `types.ts` bila perlu.
+
+Fitur: `auth`, `dashboard`, `profile`, `employees`, `organization`, `roles`, `attendance`, `leave`, `payroll`, `recruitment`, `onboarding`, `performance`, `notifications`.
+
+Route guard memakai permission yang sama dengan backend (`src/lib/permissions.ts`). Sidebar menyembunyikan item tanpa izin.
+
+## Prasyarat
+
+- [Bun](https://bun.sh)
+- Backend berjalan (lihat [`karyahr-be/README.md`](../karyahr-be/README.md))
 
 ## Setup
 
 ```bash
+cp .env.example .env
 bun install
+bun run dev
 ```
 
-Copy `.env.example` to `.env` if you need to override the API origin:
+Dev server: **http://localhost:5173** (`vite.config.ts`).
 
-```
-VITE_API_BASE_URL=http://localhost:3000
-```
+### Env
 
-The Vite dev server uses port **5173**. The backend must allow that origin with credentials:
+| Variabel | Default | Fungsi |
+|---|---|---|
+| `VITE_API_BASE_URL` | `http://localhost:3000` | Origin API |
+
+Di backend, `CORS_ORIGIN` harus berisi origin Vite, misalnya:
 
 ```
 CORS_ORIGIN=http://localhost:5173
 ```
 
-There is no Vite proxy. The Axios client sends cookies with `withCredentials: true`.
+Tanpa itu, login gagal karena cookie cross-origin ditolak.
 
 ## Scripts
 
-```bash
-bun run dev        # http://localhost:5173
-bun run typecheck  # tsc -b
-bun run build      # tsc -b && vite build
-bun run preview
-bun run lint
-```
+Tidak ada script `typecheck` terpisah. Typecheck jalan di `build` (`tsc -b && vite build`).
 
-## Auth and seed accounts
+| Script | Fungsi |
+|---|---|
+| `bun run dev` | Vite, http://localhost:5173 |
+| `bun run build` | Typecheck + production bundle |
+| `bun run preview` | Preview hasil build |
+| `bun run lint` | ESLint |
 
-Login is `/login` (email + password). Session cookies come from `POST /auth/login`. Bootstrap uses `GET /auth/me`.
+## Auth
 
-The backend seed creates roles `hr_admin`, `manager`, `recruiter`, and `employee`, plus one HR admin user. Email and password come from the backend env — **do not put passwords in this repo**:
+1. Buka `/login`.
+2. `POST /auth/login` set cookie session.
+3. `GET /auth/me` mengisi user, role, dan permissions.
+4. Guard: `RequireAuth`, `RequirePermission`, `RequireAnyPermission`, `GuestOnly`.
 
-```
-SEED_ADMIN_EMAIL=
-SEED_ADMIN_PASSWORD=
-```
+Seed backend membuat satu HR admin (`SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` di `.env.local` backend). **Jangan taruh password di repo ini.**
 
-Assign other users those roles in the running backend when you need recruiter or ESS sessions. Confirm CORS with `GET /health` or by submitting the login form against a running `karyahr-be`.
+Role lain (`manager`, `recruiter`, `employee`) di-assign di backend. Seed tidak membuat akun ESS/recruiter siap pakai selain admin.
 
-Login is `/login` (email + password). Session cookies come from `POST /auth/login`. Route guards and `/auth/me` bootstrap land in Phase 1.
+Cek API hidup: `GET http://localhost:3000/health`.
 
-Seed accounts live in the backend seed. Confirm CORS with `GET /health` or by submitting the login form against a running `karyahr-be`.
+## Rute utama
+
+Publik (tanpa login):
+
+| Path | Halaman |
+|---|---|
+| `/careers` | Daftar lowongan |
+| `/careers/:slug` | Detail lowongan |
+| `/careers/:slug/apply` | Lamar |
+
+Setelah login (contoh; tampilan tergantung permission):
+
+| Path | Halaman |
+|---|---|
+| `/` | Dashboard |
+| `/me` | Profil ESS |
+| `/employees` | Karyawan |
+| `/org/departments`, `/org/positions`, `/org/tree` | Organisasi |
+| `/attendance`, `/attendance/me`, `/attendance/dashboard`, `/attendance/shifts` | Absensi |
+| `/leave`, `/leave/new`, `/leave/inbox` | Cuti |
+| `/payroll/runs`, `/payslips` | Payroll |
+| `/recruitment/jobs` | Rekrutmen |
+| `/onboarding`, `/onboarding/me` | Onboarding |
+| `/performance/goals`, `/performance/me`, `/performance/cycles` | Kinerja |
+| `/notifications` | Notifikasi |
+| `/admin/roles` | Role & permission |
+
+Definisi lengkap: `src/app/router.tsx`.
+
+## Integrasi API
+
+- Client: `src/services/api/client.ts` — `baseURL` dari env, `withCredentials: true`.
+- Upload: MIME allowlist di `src/lib/upload.ts` (selaras backend). File disimpan di MinIO lewat API, bukan di folder frontend.
+
+Jika login berhasil di Swagger (`/docs`) tetapi gagal di UI, periksa `VITE_API_BASE_URL`, `CORS_ORIGIN`, dan bahwa kedua proses memakai HTTP (bukan campuran localhost vs 127.0.0.1 yang memecah cookie).
