@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { EmptyState } from '@/components/common/empty-state'
+import { ListPagination } from '@/components/common/list-pagination'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field, FieldLabel } from '@/components/ui/field'
@@ -72,7 +74,7 @@ export function AttendanceDashboardPage() {
   const [page, setPage] = useState(1)
   const [exportFrom, setExportFrom] = useState(todayJakarta())
   const [exportTo, setExportTo] = useState(todayJakarta())
-  const { data, isPending } = useAttendanceDashboard({
+  const { data, isPending, isError, error } = useAttendanceDashboard({
     departmentId,
     page,
     pageSize: 20,
@@ -144,6 +146,8 @@ export function AttendanceDashboardPage() {
       </div>
       {isPending ? (
         <Loader />
+      ) : isError ? (
+        <QueryErrorState error={error} />
       ) : !data ? (
         <EmptyState title="No dashboard data" />
       ) : (
@@ -154,23 +158,7 @@ export function AttendanceDashboardPage() {
             <BucketTable title="Absent" rows={data.absent} />
             <BucketTable title="On leave" rows={data.onLeave} />
           </div>
-          <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-              Previous
-            </Button>
-            <p className="text-sm text-muted-foreground">
-              Page {data.meta.page} of {data.meta.totalPages || 1}
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={page >= (data.meta.totalPages || 1)}
-              onClick={() => setPage(page + 1)}
-            >
-              Next
-            </Button>
-          </div>
+          <ListPagination page={page} totalPages={data.meta.totalPages} onPageChange={setPage} />
         </>
       )}
     </div>

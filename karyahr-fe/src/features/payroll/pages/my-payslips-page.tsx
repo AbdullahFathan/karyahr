@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { EmptyState } from '@/components/common/empty-state'
+import { ListPagination } from '@/components/common/list-pagination'
 import { Loader } from '@/components/common/loader'
-import { Button } from '@/components/ui/button'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Input } from '@/components/ui/input'
 import {
   Table,
@@ -19,7 +20,7 @@ export function MyPayslipsPage() {
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [page, setPage] = useState(1)
-  const { data, isPending, isError } = useMyPayslips({
+  const { data, isPending, isError, error } = useMyPayslips({
     page,
     pageSize: 20,
     from: from || undefined,
@@ -30,7 +31,7 @@ export function MyPayslipsPage() {
     return <Loader />
   }
   if (isError) {
-    return <EmptyState title="Could not load payslips" />
+    return <QueryErrorState error={error} />
   }
 
   const slips = data?.data ?? []
@@ -99,23 +100,7 @@ export function MyPayslipsPage() {
               ))}
             </TableBody>
           </Table>
-          <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-              Previous
-            </Button>
-            <p className="text-sm text-muted-foreground">
-              Page {data?.meta.page} of {data?.meta.totalPages || 1}
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={page >= (data?.meta.totalPages || 1)}
-              onClick={() => setPage(page + 1)}
-            >
-              Next
-            </Button>
-          </div>
+          <ListPagination page={page} totalPages={data?.meta.totalPages ?? 1} onPageChange={setPage} />
         </>
       )}
     </div>

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { EmptyState } from '@/components/common/empty-state'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -41,7 +42,7 @@ export function TeamDashboardPage() {
   const { data: directory } = useEmployees({ page: 1, pageSize: 100, status: 'ACTIVE' })
   const selectedCycleId = cycleId || cycles?.[0]?.id || ''
   const effectiveManagerId = isHr ? managerId || undefined : undefined
-  const { data: team, isPending, isError } = useTeamDistribution(
+  const { data: team, isPending, isError, error } = useTeamDistribution(
     selectedCycleId,
     effectiveManagerId,
     Boolean(selectedCycleId),
@@ -110,7 +111,9 @@ export function TeamDashboardPage() {
       </div>
       {isPending ? (
         <Loader />
-      ) : isError || !team ? (
+      ) : isError ? (
+        <QueryErrorState error={error} />
+      ) : !team ? (
         <EmptyState title="Could not load team distribution" />
       ) : (
         <>

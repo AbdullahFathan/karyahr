@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { EmptyState } from '@/components/common/empty-state'
+import { ListPagination } from '@/components/common/list-pagination'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -14,30 +16,31 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useLeaveTypes, useMyLeaveBalances, useMyLeaveRequests } from '@/features/leave/hooks/use-leave'
-import { useHasPermission } from '@/features/auth/hooks/use-has-permission'
+import { Can } from '@/features/auth/components/can'
 import { PERMISSIONS } from '@/lib/permissions'
 import { toDateInputValue } from '@/lib/dates'
 
 export function MyLeavePage() {
-  const canCreate = useHasPermission(PERMISSIONS.LEAVE_REQUESTS_CREATE)
   const { data: types } = useLeaveTypes()
-  const { data: balances, isPending: balancesPending } = useMyLeaveBalances()
+  const { data: balances, isPending: balancesPending, isError: balancesError, error: balancesErr } = useMyLeaveBalances()
   const [page, setPage] = useState(1)
-  const { data: requests, isPending: requestsPending } = useMyLeaveRequests({ page, pageSize: 20 })
+  const { data: requests, isPending: requestsPending, isError: requestsError, error: requestsErr } = useMyLeaveRequests({ page, pageSize: 20 })
   const typeName = new Map((types ?? []).map((item) => [item.id, item.name]))
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">Balances for the current year</p>
-        {canCreate ? (
+        <Can permission={PERMISSIONS.LEAVE_REQUESTS_CREATE}>
           <Button type="button" asChild>
             <Link to="/leave/new">New request</Link>
           </Button>
-        ) : null}
+        </Can>
       </div>
       {balancesPending ? (
         <Loader />
+      ) : balancesError ? (
+        <QueryErrorState error={balancesErr} />
       ) : !balances || balances.length === 0 ? (
         <EmptyState title="No leave balances" />
       ) : (
@@ -58,6 +61,8 @@ export function MyLeavePage() {
       )}
       {requestsPending ? (
         <Loader />
+      ) : requestsError ? (
+        <QueryErrorState error={requestsErr} />
       ) : !requests || requests.data.length === 0 ? (
         <EmptyState title="No leave requests" />
       ) : (
@@ -88,23 +93,7 @@ export function MyLeavePage() {
               ))}
             </TableBody>
           </Table>
-          <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-              Previous
-            </Button>
-            <p className="text-sm text-muted-foreground">
-              Page {requests.meta.page} of {requests.meta.totalPages || 1}
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={page >= (requests.meta.totalPages || 1)}
-              onClick={() => setPage(page + 1)}
-            >
-              Next
-            </Button>
-          </div>
+          <ListPagination page={page} totalPages={requests.meta.totalPages} onPageChange={setPage} />
         </>
       )}
     </div>

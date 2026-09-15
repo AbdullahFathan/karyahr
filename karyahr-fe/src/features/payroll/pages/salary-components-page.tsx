@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { EmptyState } from '@/components/common/empty-state'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -20,7 +21,7 @@ import {
 import type { SalaryComponent } from '@/features/payroll/types'
 
 export function SalaryComponentsPage() {
-  const { data, isPending } = useSalaryComponents()
+  const { data, isPending, isError, error } = useSalaryComponents()
   const createMutation = useCreateSalaryComponent()
   const updateMutation = useUpdateSalaryComponent()
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -28,6 +29,9 @@ export function SalaryComponentsPage() {
 
   if (isPending) {
     return <Loader />
+  }
+  if (isError) {
+    return <QueryErrorState error={error} />
   }
 
   const components = data ?? []

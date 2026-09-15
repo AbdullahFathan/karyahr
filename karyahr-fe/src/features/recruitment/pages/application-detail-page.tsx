@@ -2,6 +2,7 @@ import { type FormEvent, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { EmptyState } from '@/components/common/empty-state'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,7 +46,7 @@ export function ApplicationDetailPage() {
   const { id = '' } = useParams()
   const canWrite = useHasPermission(PERMISSIONS.RECRUITMENT_APPLICATIONS_WRITE)
   const canHire = useHasPermission(PERMISSIONS.RECRUITMENT_HIRE)
-  const { data: application, isPending, isError } = useApplication(id)
+  const { data: application, isPending, isError, error } = useApplication(id)
   const { data: job } = useJob(application?.jobPostingId ?? '')
   const { data: employees } = useEmployees({ page: 1, pageSize: 100 }, canHire)
   const addNote = useAddApplicationNote(id)
@@ -66,7 +67,10 @@ export function ApplicationDetailPage() {
     return <Loader />
   }
 
-  if (isError || !application) {
+  if (isError) {
+    return <QueryErrorState error={error} notFoundTitle="Application not found" />
+  }
+  if (!application) {
     return <EmptyState title="Application not found" />
   }
 

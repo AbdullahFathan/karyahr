@@ -1,5 +1,6 @@
 import { EmptyState } from '@/components/common/empty-state'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Button } from '@/components/ui/button'
 import {
   Table,
@@ -18,11 +19,14 @@ import { Link } from 'react-router-dom'
 
 export function NotificationsPage() {
   const canApproveLeave = useHasPermission(PERMISSIONS.LEAVE_REQUESTS_APPROVE)
-  const { data, isPending } = useMyNotifications()
+  const { data, isPending, isError, error } = useMyNotifications()
   const markRead = useMarkNotificationRead()
 
   if (isPending) {
     return <Loader />
+  }
+  if (isError) {
+    return <QueryErrorState error={error} />
   }
 
   const items = data ?? []

@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { EmptyState } from '@/components/common/empty-state'
+import { ListPagination } from '@/components/common/list-pagination'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -27,7 +29,7 @@ import { queryClient } from '@/services/query/query-client'
 export function PayrollRunDetailPage() {
   const { id = '' } = useParams()
   const canExport = useHasPermission(PERMISSIONS.PAYROLL_EXPORT)
-  const { data: run, isPending, isError } = usePayrollRun(id)
+  const { data: run, isPending, isError, error } = usePayrollRun(id)
   const [page, setPage] = useState(1)
   const { data: payslips, isPending: payslipsPending } = useRunPayslips(id, { page, pageSize: 20 }, Boolean(run))
   const exportMutation = useDownloadPayrollExport()
@@ -37,12 +39,15 @@ export function PayrollRunDetailPage() {
       return
     }
     void queryClient.invalidateQueries({ queryKey: ['payroll', 'run', id, 'payslips'] })
-  }, [id, run?.status])
+  }, [id, run])
 
   if (isPending) {
     return <Loader />
   }
-  if (isError || !run) {
+  if (isError) {
+    return <QueryErrorState error={error} notFoundTitle="Payroll run not found" />
+  }
+  if (!run) {
     return <EmptyState title="Payroll run not found" />
   }
 
@@ -167,23 +172,7 @@ export function PayrollRunDetailPage() {
               ))}
             </TableBody>
           </Table>
-          <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-              Previous
-            </Button>
-            <p className="text-sm text-muted-foreground">
-              Page {payslips.meta.page} of {payslips.meta.totalPages || 1}
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={page >= (payslips.meta.totalPages || 1)}
-              onClick={() => setPage(page + 1)}
-            >
-              Next
-            </Button>
-          </div>
+          <ListPagination page={page} totalPages={payslips.meta.totalPages} onPageChange={setPage} />
         </>
       )}
     </div>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { EmptyState } from '@/components/common/empty-state'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -13,7 +14,7 @@ export function MyAttendancePage() {
   const [from, setFrom] = useState(today)
   const [to, setTo] = useState(today)
   const [applied, setApplied] = useState({ from: today, to: today })
-  const { data, isPending } = useMyAttendance(applied)
+  const { data, isPending, isError, error } = useMyAttendance(applied)
 
   return (
     <div className="flex flex-col gap-4">
@@ -36,6 +37,8 @@ export function MyAttendancePage() {
       </form>
       {isPending ? (
         <Loader />
+      ) : isError ? (
+        <QueryErrorState error={error} />
       ) : !data || data.length === 0 ? (
         <EmptyState title="No attendance records" description="Choose a date range and apply." />
       ) : (

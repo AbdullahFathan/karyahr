@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom'
 import { EmptyState } from '@/components/common/empty-state'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -19,14 +20,17 @@ import { Spinner } from '@/components/ui/spinner'
 
 export function PayslipPage() {
   const { id = '' } = useParams()
-  const { data, isPending, isError } = usePayslip(id)
+  const { data, isPending, isError, error } = usePayslip(id)
   const downloadMutation = useDownloadPayslipPdf()
   const canReadRuns = useHasPermission(PERMISSIONS.PAYROLL_RUNS_READ)
 
   if (isPending) {
     return <Loader />
   }
-  if (isError || !data) {
+  if (isError) {
+    return <QueryErrorState error={error} notFoundTitle="Payslip not found" />
+  }
+  if (!data) {
     return <EmptyState title="Payslip not found" />
   }
 

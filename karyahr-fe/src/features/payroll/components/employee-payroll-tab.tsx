@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useState } from 'react'
+import { type FormEvent, useState } from 'react'
 import { EmptyState } from '@/components/common/empty-state'
 import { Loader } from '@/components/common/loader'
 import { Button } from '@/components/ui/button'
@@ -69,10 +69,9 @@ export function EmployeePayrollTab({ employeeId }: EmployeePayrollTabProps) {
     effectiveTo: '',
   })
 
-  useEffect(() => {
-    if (!profile) {
-      return
-    }
+  const [hydratedProfileId, setHydratedProfileId] = useState(profile?.id ?? null)
+  if (profile && profile.id !== hydratedProfileId) {
+    setHydratedProfileId(profile.id)
     setProfileValues({
       ptkpStatus: profile.ptkpStatus,
       taxMethod: profile.taxMethod,
@@ -83,7 +82,7 @@ export function EmployeePayrollTab({ employeeId }: EmployeePayrollTabProps) {
       bpjsKesehatanEnrolled: profile.bpjsKesehatanEnrolled,
       bpjsTkEnrolled: profile.bpjsTkEnrolled,
     })
-  }, [profile])
+  }
 
   function handleProfileSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()

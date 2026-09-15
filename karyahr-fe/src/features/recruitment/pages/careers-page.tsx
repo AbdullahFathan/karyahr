@@ -1,20 +1,21 @@
 import { Link } from 'react-router-dom'
 import { EmptyState } from '@/components/common/empty-state'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { usePublicCareers } from '@/features/recruitment/hooks/use-recruitment'
 import { toDateInputValue } from '@/lib/dates'
 
 export function CareersPage() {
-  const { data, isPending, isError } = usePublicCareers()
+  const { data, isPending, isError, error } = usePublicCareers()
 
   if (isPending) {
     return <Loader />
   }
 
   if (isError) {
-    return <EmptyState title="Could not load careers" />
+    return <QueryErrorState error={error} />
   }
 
   const jobs = data ?? []

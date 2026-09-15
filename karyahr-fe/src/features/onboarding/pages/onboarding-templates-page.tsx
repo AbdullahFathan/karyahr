@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react'
 import { EmptyState } from '@/components/common/empty-state'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -27,7 +28,7 @@ import { usePositions } from '@/features/organization/hooks/use-organization'
 import { getApiErrorMessage } from '@/lib/api-error'
 
 export function OnboardingTemplatesPage() {
-  const { data: templates, isPending, isError } = useOnboardingTemplates()
+  const { data: templates, isPending, isError, error } = useOnboardingTemplates()
   const { data: positions } = usePositions()
   const createTemplate = useCreateOnboardingTemplate()
   const addItem = useAddOnboardingTemplateItem()
@@ -45,7 +46,7 @@ export function OnboardingTemplatesPage() {
   }
 
   if (isError) {
-    return <EmptyState title="Could not load templates" />
+    return <QueryErrorState error={error} />
   }
 
   function handleCreate(event: FormEvent<HTMLFormElement>) {

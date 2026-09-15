@@ -25,13 +25,25 @@ There is no Vite proxy. The Axios client sends cookies with `withCredentials: tr
 ## Scripts
 
 ```bash
-bun run dev      # http://localhost:5173
-bun run build    # tsc -b && vite build
+bun run dev        # http://localhost:5173
+bun run typecheck  # tsc -b
+bun run build      # tsc -b && vite build
 bun run preview
 bun run lint
 ```
 
-## Auth (Phase 0)
+## Auth and seed accounts
+
+Login is `/login` (email + password). Session cookies come from `POST /auth/login`. Bootstrap uses `GET /auth/me`.
+
+The backend seed creates roles `hr_admin`, `manager`, `recruiter`, and `employee`, plus one HR admin user. Email and password come from the backend env — **do not put passwords in this repo**:
+
+```
+SEED_ADMIN_EMAIL=
+SEED_ADMIN_PASSWORD=
+```
+
+Assign other users those roles in the running backend when you need recruiter or ESS sessions. Confirm CORS with `GET /health` or by submitting the login form against a running `karyahr-be`.
 
 Login is `/login` (email + password). Session cookies come from `POST /auth/login`. Route guards and `/auth/me` bootstrap land in Phase 1.
 

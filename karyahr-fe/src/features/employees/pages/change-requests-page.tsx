@@ -1,10 +1,21 @@
 import { useState } from 'react'
 import { EmptyState } from '@/components/common/empty-state'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import {
   Select,
   SelectContent,
@@ -26,12 +37,16 @@ import { CHANGE_REQUEST_STATUSES, type ChangeRequestStatus } from '@/features/em
 
 export function ChangeRequestsPage() {
   const [status, setStatus] = useState<ChangeRequestStatus>('PENDING')
-  const { data, isPending } = useChangeRequestInbox(status)
+  const { data, isPending, isError, error } = useChangeRequestInbox(status)
   const reviewMutation = useReviewChangeRequest()
   const [notes, setNotes] = useState<Record<string, string>>({})
+  const [rejectId, setRejectId] = useState<string | null>(null)
 
   if (isPending) {
     return <Loader />
+  }
+  if (isError) {
+    return <QueryErrorState error={error} />
   }
 
   return (
@@ -105,13 +120,7 @@ export function ChangeRequestsPage() {
                           size="sm"
                           variant="destructive"
                           disabled={reviewMutation.isPending}
-                          onClick={() =>
-                            reviewMutation.mutate({
-                              id: item.id,
-                              action: 'reject',
-                              reviewNote: notes[item.id] || undefined,
-                            })
-                          }
+                          onClick={() => setRejectId(item.id)}
                         >
                           Reject
                         </Button>
@@ -126,6 +135,33 @@ export function ChangeRequestsPage() {
           </TableBody>
         </Table>
       )}
+      <AlertDialog open={Boolean(rejectId)} onOpenChange={(open) => !open && setRejectId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reject this change request?</AlertDialogTitle>
+            <AlertDialogDescription>The employee is notified after you confirm.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                if (!rejectId) {
+                  return
+                }
+                reviewMutation.mutate({
+                  id: rejectId,
+                  action: 'reject',
+                  reviewNote: notes[rejectId] || undefined,
+                })
+                setRejectId(null)
+              }}
+            >
+              Reject
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

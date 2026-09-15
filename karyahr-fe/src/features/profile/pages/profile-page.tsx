@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react'
 import { EmptyState } from '@/components/common/empty-state'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -26,7 +27,7 @@ import { PERMISSIONS } from '@/lib/permissions'
 import { toDateInputValue } from '@/lib/dates'
 
 export function ProfilePage() {
-  const { data, isPending, isError } = useMyEmployee()
+  const { data, isPending, isError, error } = useMyEmployee()
   const { data: requests } = useMyChangeRequests()
   const createMutation = useCreateChangeRequest()
   const canCreate = useHasPermission(PERMISSIONS.EMPLOYEES_CHANGE_REQUEST_CREATE)
@@ -38,7 +39,10 @@ export function ProfilePage() {
   if (isPending) {
     return <Loader />
   }
-  if (isError || !data) {
+  if (isError) {
+    return <QueryErrorState error={error} notFoundTitle="Profile unavailable" />
+  }
+  if (!data) {
     return <EmptyState title="Profile unavailable" />
   }
 

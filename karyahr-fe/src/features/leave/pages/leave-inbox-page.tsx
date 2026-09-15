@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { EmptyState } from '@/components/common/empty-state'
+import { ListPagination } from '@/components/common/list-pagination'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,7 +31,7 @@ import { toDateInputValue } from '@/lib/dates'
 export function LeaveInboxPage() {
   const { data: types } = useLeaveTypes()
   const [page, setPage] = useState(1)
-  const { data, isPending } = useLeaveInbox({ page, pageSize: 20 })
+  const { data, isPending, isError, error } = useLeaveInbox({ page, pageSize: 20 })
   const reviewMutation = useReviewLeaveRequest()
   const [comments, setComments] = useState<Record<string, string>>({})
   const [rejectId, setRejectId] = useState<string | null>(null)
@@ -37,6 +39,9 @@ export function LeaveInboxPage() {
 
   if (isPending) {
     return <Loader />
+  }
+  if (isError) {
+    return <QueryErrorState error={error} />
   }
 
   return (
@@ -115,23 +120,7 @@ export function LeaveInboxPage() {
               ))}
             </TableBody>
           </Table>
-          <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-              Previous
-            </Button>
-            <p className="text-sm text-muted-foreground">
-              Page {data.meta.page} of {data.meta.totalPages || 1}
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={page >= (data.meta.totalPages || 1)}
-              onClick={() => setPage(page + 1)}
-            >
-              Next
-            </Button>
-          </div>
+          <ListPagination page={page} totalPages={data.meta.totalPages} onPageChange={setPage} />
         </>
       )}
       <AlertDialog open={Boolean(rejectId)} onOpenChange={(open) => !open && setRejectId(null)}>

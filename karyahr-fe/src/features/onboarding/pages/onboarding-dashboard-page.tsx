@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { EmptyState } from '@/components/common/empty-state'
+import { ListPagination } from '@/components/common/list-pagination'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import {
   Table,
   TableBody,
@@ -17,7 +18,7 @@ import { useEmployees } from '@/features/employees/hooks/use-employees'
 
 export function OnboardingDashboardPage() {
   const [page, setPage] = useState(1)
-  const { data, isPending, isError } = useOnboardingDashboard({ page, pageSize: 20 })
+  const { data, isPending, isError, error } = useOnboardingDashboard({ page, pageSize: 20 })
   const { data: employees } = useEmployees({ page: 1, pageSize: 100 })
   const employeeName = new Map((employees?.data ?? []).map((item) => [item.id, item.fullName]))
 
@@ -26,7 +27,7 @@ export function OnboardingDashboardPage() {
   }
 
   if (isError) {
-    return <EmptyState title="Could not load onboarding" />
+    return <QueryErrorState error={error} />
   }
 
   const rows = data?.data ?? []
@@ -66,23 +67,7 @@ export function OnboardingDashboardPage() {
               ))}
             </TableBody>
           </Table>
-          <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-              Previous
-            </Button>
-            <p className="text-sm text-muted-foreground">
-              Page {data?.meta.page} of {data?.meta.totalPages || 1}
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={page >= (data?.meta.totalPages || 1)}
-              onClick={() => setPage(page + 1)}
-            >
-              Next
-            </Button>
-          </div>
+          <ListPagination page={page} totalPages={data?.meta.totalPages ?? 1} onPageChange={setPage} />
         </>
       )}
     </div>

@@ -2,17 +2,19 @@ import { type FormEvent, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { EmptyState } from '@/components/common/empty-state'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/spinner'
 import { careerApplyFormSchema } from '@/features/recruitment/schema'
 import { useApplyToCareer, usePublicCareer } from '@/features/recruitment/hooks/use-recruitment'
+import { FILE_TYPE_NOT_ALLOWED, UPLOAD_ACCEPT, isAllowedUpload } from '@/lib/upload'
 import { getApiErrorMessage } from '@/lib/api-error'
 
 export function CareerApplyPage() {
   const { slug = '' } = useParams()
-  const { data: job, isPending, isError } = usePublicCareer(slug)
+  const { data: job, isPending, isError, error } = usePublicCareer(slug)
   const applyMutation = useApplyToCareer(slug)
   const [formError, setFormError] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
@@ -28,7 +30,10 @@ export function CareerApplyPage() {
     return <Loader />
   }
 
-  if (isError || !job) {
+  if (isError) {
+    return <QueryErrorState error={error} notFoundTitle="Role not found" />
+  }
+  if (!job) {
     return <EmptyState title="Role not found" />
   }
 
@@ -50,6 +55,10 @@ export function CareerApplyPage() {
     })
     if (!parsed.success) {
       setFormError(parsed.error.issues[0]?.message ?? 'Fill every required field.')
+      return
+    }
+    if (parsed.data.file && !isAllowedUpload(parsed.data.file)) {
+      setFormError(FILE_TYPE_NOT_ALLOWED)
       return
     }
     applyMutation.mutate(parsed.data, {
@@ -105,7 +114,7 @@ export function CareerApplyPage() {
           <Input
             id="file"
             type="file"
-            accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx"
+            accept={UPLOAD_ACCEPT}
             onChange={(event) =>
               setValues((current) => ({ ...current, file: event.target.files?.[0] }))
             }

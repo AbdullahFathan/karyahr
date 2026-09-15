@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { EmptyState } from '@/components/common/empty-state'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -16,7 +17,7 @@ import { useCreateLeaveType, useLeaveTypes, useUpdateLeaveType } from '@/feature
 import type { LeaveType } from '@/features/leave/types'
 
 export function LeaveTypesPage() {
-  const { data, isPending } = useLeaveTypes()
+  const { data, isPending, isError, error } = useLeaveTypes()
   const createMutation = useCreateLeaveType()
   const updateMutation = useUpdateLeaveType()
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -24,6 +25,9 @@ export function LeaveTypesPage() {
 
   if (isPending) {
     return <Loader />
+  }
+  if (isError) {
+    return <QueryErrorState error={error} />
   }
 
   const types = data ?? []

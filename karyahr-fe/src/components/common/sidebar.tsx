@@ -5,12 +5,16 @@ import { displayName, hasPermission, primaryRole } from '@/lib/auth'
 import { Separator } from '@/components/ui/separator'
 import { useAuth } from '@/features/auth/hooks/use-auth'
 
-export function Sidebar() {
+type SidebarNavProps = {
+  readonly onNavigate?: () => void
+}
+
+export function SidebarNav({ onNavigate }: SidebarNavProps) {
   const { data } = useAuth()
   const permissions = data?.permissions ?? []
 
   return (
-    <aside className="flex h-full w-64 shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar">
+    <div className="flex h-full min-h-0 flex-col">
       <div className="flex h-16 items-center px-5">
         <span className="font-heading text-lg font-semibold text-primary">{APP_NAME}</span>
       </div>
@@ -43,6 +47,7 @@ export function Sidebar() {
                     key={item.label}
                     to={item.to ?? '/'}
                     end={item.end ?? item.to === '/'}
+                    onClick={onNavigate}
                     className={({ isActive }) =>
                       cn(
                         'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
@@ -65,6 +70,14 @@ export function Sidebar() {
         <p className="text-sm font-medium">{data ? displayName(data) : 'Signed in'}</p>
         <p className="text-xs text-muted-foreground">{data ? primaryRole(data) : ''}</p>
       </div>
+    </div>
+  )
+}
+
+export function Sidebar() {
+  return (
+    <aside className="hidden h-full w-64 shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar md:flex">
+      <SidebarNav />
     </aside>
   )
 }

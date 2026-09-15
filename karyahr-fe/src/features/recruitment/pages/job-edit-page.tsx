@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { EmptyState } from '@/components/common/empty-state'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { FieldError } from '@/components/ui/field'
 import { JobForm } from '@/features/recruitment/components/job-form'
 import { useJob, useUpdateJob } from '@/features/recruitment/hooks/use-recruitment'
@@ -11,7 +12,7 @@ import { getApiErrorMessage } from '@/lib/api-error'
 export function JobEditPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
-  const { data: job, isPending, isError } = useJob(id)
+  const { data: job, isPending, isError, error: queryError } = useJob(id)
   const { data: departments, isPending: departmentsPending } = useDepartments()
   const { data: positions, isPending: positionsPending } = usePositions()
   const updateMutation = useUpdateJob(id)
@@ -21,7 +22,10 @@ export function JobEditPage() {
     return <Loader />
   }
 
-  if (isError || !job || !departments || !positions) {
+  if (isError) {
+    return <QueryErrorState error={queryError} notFoundTitle="Job not found" />
+  }
+  if (!job || !departments || !positions) {
     return <EmptyState title="Could not load job" />
   }
 

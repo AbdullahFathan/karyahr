@@ -2,6 +2,7 @@ import { type FormEvent, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { EmptyState } from '@/components/common/empty-state'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
@@ -54,6 +55,7 @@ import { useDepartments, usePositions } from '@/features/organization/hooks/use-
 import { useHasPermission } from '@/features/auth/hooks/use-has-permission'
 import { PERMISSIONS } from '@/lib/permissions'
 import { toDateInputValue } from '@/lib/dates'
+import { FILE_TYPE_NOT_ALLOWED, UPLOAD_ACCEPT, isAllowedUpload } from '@/lib/upload'
 import { EmployeePayrollTab } from '@/features/payroll'
 
 const EMPLOYEE_TABS = ['profile', 'documents', 'mutations', 'payroll'] as const
@@ -66,7 +68,7 @@ function isEmployeeTab(value: string | null): value is EmployeeTab {
 export function EmployeeDetailPage() {
   const { id = '' } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { data, isPending, isError } = useEmployee(id)
+  const { data, isPending, isError, error } = useEmployee(id)
   const canWrite = useHasPermission(PERMISSIONS.EMPLOYEES_WRITE)
   const canPayroll = useHasPermission(PERMISSIONS.PAYROLL_PROFILE_WRITE)
   const requestedTab = searchParams.get('tab')
@@ -80,7 +82,10 @@ export function EmployeeDetailPage() {
   if (isPending) {
     return <Loader />
   }
-  if (isError || !data) {
+  if (isError) {
+    return <QueryErrorState error={error} notFoundTitle="Employee not found" />
+  }
+  if (!data) {
     return <EmptyState title="Employee not found" />
   }
 
@@ -193,22 +198,31 @@ function ProfileTab({ employeeId, canWrite }: { readonly employeeId: string; rea
 function DocumentsTab({ employeeId }: { readonly employeeId: string }) {
   const canRead = useHasPermission(PERMISSIONS.EMPLOYEES_DOCUMENTS_READ)
   const canWrite = useHasPermission(PERMISSIONS.EMPLOYEES_DOCUMENTS_WRITE)
-  const { data, isPending } = useEmployeeDocuments(employeeId)
+  const { data, isPending, isError, error } = useEmployeeDocuments(employeeId)
   const uploadMutation = useUploadDocument(employeeId)
   const deleteMutation = useDeleteDocument(employeeId)
   const [type, setType] = useState<DocumentType>('KTP')
   const [file, setFile] = useState<File | null>(null)
+  const [fileError, setFileError] = useState<string | null>(null)
 
   if (!canRead) {
-    return <EmptyState title="Not allowed" description="You cannot view documents." />
+    return <EmptyState title="Forbidden" description="You cannot view documents." />
   }
   if (isPending) {
     return <Loader />
   }
+  if (isError) {
+    return <QueryErrorState error={error} />
+  }
 
   function handleUpload(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    setFileError(null)
     if (!file) {
+      return
+    }
+    if (!isAllowedUpload(file)) {
+      setFileError(FILE_TYPE_NOT_ALLOWED)
       return
     }
     uploadMutation.mutate({ file, type }, { onSuccess: () => setFile(null) })
@@ -240,8 +254,13 @@ function DocumentsTab({ employeeId }: { readonly employeeId: string }) {
             <Input
               id="document-file"
               type="file"
-              onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+              accept={UPLOAD_ACCEPT}
+              onChange={(event) => {
+                setFileError(null)
+                setFile(event.target.files?.[0] ?? null)
+              }}
             />
+            {fileError ? <p className="text-sm text-destructive">{fileError}</p> : null}
           </Field>
           <Button type="submit" disabled={!file || uploadMutation.isPending}>
             Upload

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { EmptyState } from '@/components/common/empty-state'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import {
   Select,
   SelectContent,
@@ -18,7 +19,7 @@ export function HeatmapPage() {
   const { data: departments } = useDepartments()
   const [cycleId, setCycleId] = useState('')
   const selectedCycleId = cycleId || cycles?.[0]?.id || ''
-  const { data, isPending, isError } = useDepartmentHeatmap(selectedCycleId, Boolean(selectedCycleId))
+  const { data, isPending, isError, error } = useDepartmentHeatmap(selectedCycleId, Boolean(selectedCycleId))
   const departmentName = new Map((departments ?? []).map((item) => [item.id, item.name]))
 
   if (cyclesPending) {
@@ -47,7 +48,9 @@ export function HeatmapPage() {
       </Select>
       {isPending ? (
         <Loader />
-      ) : isError || !data ? (
+      ) : isError ? (
+        <QueryErrorState error={error} />
+      ) : !data ? (
         <EmptyState title="Could not load heatmap" />
       ) : data.cells.length === 0 ? (
         <EmptyState title="No department scores for this cycle" />

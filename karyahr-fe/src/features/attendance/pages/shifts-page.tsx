@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { EmptyState } from '@/components/common/empty-state'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -17,10 +18,11 @@ import { formatMinutesOfDay } from '@/features/attendance/format'
 import { useCreateShift, useShifts, useUpdateShift } from '@/features/attendance/hooks/use-attendance'
 import type { Shift } from '@/features/attendance/types'
 import { useHasPermission } from '@/features/auth/hooks/use-has-permission'
+import { Can } from '@/features/auth/components/can'
 import { PERMISSIONS } from '@/lib/permissions'
 
 export function ShiftsPage() {
-  const { data, isPending } = useShifts()
+  const { data, isPending, isError, error } = useShifts()
   const canWrite = useHasPermission(PERMISSIONS.ATTENDANCE_SHIFTS_WRITE)
   const createMutation = useCreateShift()
   const updateMutation = useUpdateShift()
@@ -30,6 +32,9 @@ export function ShiftsPage() {
   if (isPending) {
     return <Loader />
   }
+  if (isError) {
+    return <QueryErrorState error={error} />
+  }
 
   const shifts = data ?? []
 
@@ -37,7 +42,7 @@ export function ShiftsPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">{shifts.length} shifts</p>
-        {canWrite ? (
+          <Can permission={PERMISSIONS.ATTENDANCE_SHIFTS_WRITE}>
           <Button
             type="button"
             onClick={() => {
@@ -47,7 +52,7 @@ export function ShiftsPage() {
           >
             Add shift
           </Button>
-        ) : null}
+        </Can>
       </div>
       {shifts.length === 0 ? (
         <EmptyState title="No shifts" description="Create a shift to assign employees." />

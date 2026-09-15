@@ -1,7 +1,9 @@
 import { type FormEvent, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { EmptyState } from '@/components/common/empty-state'
+import { ListPagination } from '@/components/common/list-pagination'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -32,7 +34,7 @@ export function JobDetailPage() {
   const canWrite = useHasPermission(PERMISSIONS.RECRUITMENT_JOBS_WRITE)
   const canReadApplications = useHasPermission(PERMISSIONS.RECRUITMENT_APPLICATIONS_READ)
   const [page, setPage] = useState(1)
-  const { data: job, isPending, isError } = useJob(id)
+  const { data: job, isPending, isError, error } = useJob(id)
   const { data: applications } = useJobApplications(id, { page, pageSize: 20 })
   const { data: departments } = useDepartments()
   const { data: positions } = usePositions()
@@ -46,7 +48,10 @@ export function JobDetailPage() {
     return <Loader />
   }
 
-  if (isError || !job) {
+  if (isError) {
+    return <QueryErrorState error={error} notFoundTitle="Job not found" />
+  }
+  if (!job) {
     return <EmptyState title="Job not found" />
   }
 
@@ -192,29 +197,11 @@ export function JobDetailPage() {
                   ))}
                 </TableBody>
               </Table>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={page <= 1}
-                  onClick={() => setPage(page - 1)}
-                >
-                  Previous
-                </Button>
-                <p className="text-sm text-muted-foreground">
-                  Page {applications.meta.page} of {applications.meta.totalPages || 1}
-                </p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={page >= (applications.meta.totalPages || 1)}
-                  onClick={() => setPage(page + 1)}
-                >
-                  Next
-                </Button>
-              </div>
+              <ListPagination
+                page={page}
+                totalPages={applications.meta.totalPages}
+                onPageChange={setPage}
+              />
             </>
           )}
         </div>

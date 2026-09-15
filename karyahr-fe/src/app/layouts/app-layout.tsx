@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { Navbar } from '@/components/common/navbar'
-import { Sidebar } from '@/components/common/sidebar'
+import { Sidebar, SidebarNav } from '@/components/common/sidebar'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { APP_NAME, PAGE_TITLES } from '@/lib/constants'
 
 function pageTitle(pathname: string): string {
@@ -43,13 +45,22 @@ function pageTitle(pathname: string): string {
 export function AppLayout() {
   const { pathname } = useLocation()
   const title = pageTitle(pathname)
+  const [navOpen, setNavOpen] = useState(false)
 
   return (
     <div className="flex h-svh w-full min-w-0 overflow-hidden bg-background">
       <Sidebar />
+      <Sheet open={navOpen} onOpenChange={setNavOpen}>
+        <SheetContent side="left" className="w-64 p-0 md:hidden">
+          <SheetHeader className="sr-only">
+            <SheetTitle>Navigation</SheetTitle>
+          </SheetHeader>
+          <SidebarNav onNavigate={() => setNavOpen(false)} />
+        </SheetContent>
+      </Sheet>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <Navbar title={title} />
-        <main className="min-h-0 min-w-0 flex-1 overflow-auto p-6">
+        <Navbar title={title} onOpenNav={() => setNavOpen(true)} />
+        <main className="min-h-0 min-w-0 flex-1 overflow-auto p-4 md:p-6">
           <Outlet />
         </main>
       </div>

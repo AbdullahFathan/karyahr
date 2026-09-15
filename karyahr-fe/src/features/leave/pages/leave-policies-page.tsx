@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { EmptyState } from '@/components/common/empty-state'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Button } from '@/components/ui/button'
 import {
   Table,
@@ -21,7 +22,7 @@ import type { LeavePolicy } from '@/features/leave/types'
 import { useDepartments, usePositions } from '@/features/organization/hooks/use-organization'
 
 export function LeavePoliciesPage() {
-  const { data, isPending } = useLeavePolicies()
+  const { data, isPending, isError, error } = useLeavePolicies()
   const { data: types } = useLeaveTypes()
   const { data: departments } = useDepartments()
   const { data: positions } = usePositions()
@@ -32,6 +33,9 @@ export function LeavePoliciesPage() {
 
   if (isPending) {
     return <Loader />
+  }
+  if (isError) {
+    return <QueryErrorState error={error} />
   }
 
   const policies = data ?? []

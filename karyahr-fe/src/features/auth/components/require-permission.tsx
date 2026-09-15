@@ -20,7 +20,7 @@ export function RequirePermission({ permission }: RequirePermissionProps) {
   }
 
   if (!hasPermission(data.permissions, permission)) {
-    return <EmptyState title="Not allowed" description="You do not have permission to view this page." />
+    return <EmptyState title="Forbidden" description="You do not have permission to view this page." />
   }
 
   return <Outlet />

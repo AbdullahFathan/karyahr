@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom'
 import { EmptyState } from '@/components/common/empty-state'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -9,13 +10,16 @@ import { toDateInputValue } from '@/lib/dates'
 
 export function CareerDetailPage() {
   const { slug = '' } = useParams()
-  const { data: job, isPending, isError } = usePublicCareer(slug)
+  const { data: job, isPending, isError, error } = usePublicCareer(slug)
 
   if (isPending) {
     return <Loader />
   }
 
-  if (isError || !job) {
+  if (isError) {
+    return <QueryErrorState error={error} notFoundTitle="Role not found" />
+  }
+  if (!job) {
     return <EmptyState title="Role not found" />
   }
 

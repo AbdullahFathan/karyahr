@@ -24,7 +24,20 @@ export const NAV_GROUPS: readonly NavGroup[] = [
   {
     label: 'Overview',
     items: [
-      { label: 'Dashboard', to: '/' },
+      {
+        label: 'Dashboard',
+        to: '/',
+        anyOf: [
+          'employees:read',
+          'attendance:dashboard',
+          'leave:requests:approve',
+          'recruitment:jobs:read',
+          'employees:me:read',
+          'attendance:me:punch',
+          'leave:requests:me',
+          'payslips:me',
+        ],
+      },
       { label: 'Profile', to: '/me', permission: 'employees:me:read' },
     ],
   },

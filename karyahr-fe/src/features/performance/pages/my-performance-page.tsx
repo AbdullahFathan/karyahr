@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { EmptyState } from '@/components/common/empty-state'
+import { ListPagination } from '@/components/common/list-pagination'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -25,7 +27,7 @@ export function MyPerformancePage() {
   const [page, setPage] = useState(1)
   const [dialogOpen, setDialogOpen] = useState(false)
   const createMutation = useCreateGoal()
-  const { data: goals, isPending: goalsPending, isError: goalsError } = useMyGoals({ page, pageSize: 20 })
+  const { data: goals, isPending: goalsPending, isError: goalsError, error: goalsErr } = useMyGoals({ page, pageSize: 20 })
   const { data: reviews, isPending: reviewsPending } = useMyReviews()
 
   return (
@@ -42,7 +44,7 @@ export function MyPerformancePage() {
         {goalsPending ? (
           <Loader />
         ) : goalsError ? (
-          <EmptyState title="Could not load goals" />
+          <QueryErrorState error={goalsErr} />
         ) : !goals || goals.data.length === 0 ? (
           <EmptyState title="No goals" />
         ) : (
@@ -74,23 +76,7 @@ export function MyPerformancePage() {
                 ))}
               </TableBody>
             </Table>
-            <div className="flex items-center gap-2">
-              <Button type="button" variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-                Previous
-              </Button>
-              <p className="text-sm text-muted-foreground">
-                Page {goals.meta.page} of {goals.meta.totalPages || 1}
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={page >= (goals.meta.totalPages || 1)}
-                onClick={() => setPage(page + 1)}
-              >
-                Next
-              </Button>
-            </div>
+            <ListPagination page={page} totalPages={goals.meta.totalPages} onPageChange={setPage} />
           </>
         )}
       </section>

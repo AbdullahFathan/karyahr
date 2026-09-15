@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { EmptyState } from '@/components/common/empty-state'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,7 +37,7 @@ import { PERMISSIONS } from '@/lib/permissions'
 
 export function CyclesPage() {
   const canWrite = useHasPermission(PERMISSIONS.PERFORMANCE_CYCLES_WRITE)
-  const { data, isPending, isError } = useCycles()
+  const { data, isPending, isError, error } = useCycles()
   const createMutation = useCreateCycle()
   const updateMutation = useUpdateCycle()
   const openMutation = useOpenCycle()
@@ -50,7 +51,7 @@ export function CyclesPage() {
   }
 
   if (isError) {
-    return <EmptyState title="Could not load cycles" />
+    return <QueryErrorState error={error} />
   }
 
   const cycles = data ?? []

@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { EmptyState } from '@/components/common/empty-state'
+import { ListPagination } from '@/components/common/list-pagination'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,18 +26,17 @@ import {
 import { useEmployees } from '@/features/employees/hooks/use-employees'
 import { EMPLOYEE_STATUSES, type EmployeeStatus } from '@/features/employees/types'
 import { useDepartments, usePositions } from '@/features/organization/hooks/use-organization'
-import { useHasPermission } from '@/features/auth/hooks/use-has-permission'
+import { Can } from '@/features/auth/components/can'
 import { PERMISSIONS } from '@/lib/permissions'
 import { useDebounce } from '@/hooks/use-debounce'
 
 export function EmployeesPage() {
-  const canWrite = useHasPermission(PERMISSIONS.EMPLOYEES_WRITE)
   const [search, setSearch] = useState('')
   const [departmentId, setDepartmentId] = useState<string | undefined>()
   const [status, setStatus] = useState<EmployeeStatus | undefined>()
   const [page, setPage] = useState(1)
   const debouncedSearch = useDebounce(search, 300)
-  const { data, isPending } = useEmployees({
+  const { data, isPending, isError, error } = useEmployees({
     search: debouncedSearch,
     departmentId,
     status,
@@ -103,14 +104,16 @@ export function EmployeesPage() {
             </SelectContent>
           </Select>
         </div>
-        {canWrite ? (
+        <Can permission={PERMISSIONS.EMPLOYEES_WRITE}>
           <Button asChild>
             <Link to="/employees/new">Add employee</Link>
           </Button>
-        ) : null}
+        </Can>
       </div>
       {isPending ? (
         <Loader />
+      ) : isError ? (
+        <QueryErrorState error={error} />
       ) : !data || data.data.length === 0 ? (
         <EmptyState title="No employees" />
       ) : (
@@ -145,23 +148,7 @@ export function EmployeesPage() {
               ))}
             </TableBody>
           </Table>
-          <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-              Previous
-            </Button>
-            <p className="text-sm text-muted-foreground">
-              Page {data.meta.page} of {data.meta.totalPages}
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={page >= data.meta.totalPages}
-              onClick={() => setPage(page + 1)}
-            >
-              Next
-            </Button>
-          </div>
+          <ListPagination page={page} totalPages={data.meta.totalPages} onPageChange={setPage} />
         </>
       )}
     </div>

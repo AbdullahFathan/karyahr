@@ -21,7 +21,7 @@ export function RequireAnyPermission({ permissions }: RequireAnyPermissionProps)
 
   const allowed = permissions.some((permission) => hasPermission(data.permissions, permission))
   if (!allowed) {
-    return <EmptyState title="Not allowed" description="You do not have permission to view this page." />
+    return <EmptyState title="Forbidden" description="You do not have permission to view this page." />
   }
 
   return <Outlet />

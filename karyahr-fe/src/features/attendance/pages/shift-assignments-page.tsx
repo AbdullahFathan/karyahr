@@ -2,6 +2,7 @@ import { type FormEvent, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { EmptyState } from '@/components/common/empty-state'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -34,7 +35,7 @@ export function ShiftAssignmentsPage() {
   const shiftId = id ?? ''
   const canWrite = useHasPermission(PERMISSIONS.ATTENDANCE_SHIFTS_WRITE)
   const canReadEmployees = useHasPermission(PERMISSIONS.EMPLOYEES_READ)
-  const { data: shift, isPending: shiftPending } = useShift(shiftId)
+  const { data: shift, isPending: shiftPending, isError: shiftError, error: shiftErr } = useShift(shiftId)
   const { data: shifts } = useShifts()
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebounce(search, 300)
@@ -74,6 +75,10 @@ export function ShiftAssignmentsPage() {
 
   if (shiftPending) {
     return <Loader />
+  }
+
+  if (shiftError) {
+    return <QueryErrorState error={shiftErr} notFoundTitle="Shift not found" />
   }
 
   if (!shift) {

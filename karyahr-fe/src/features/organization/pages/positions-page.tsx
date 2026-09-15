@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { EmptyState } from '@/components/common/empty-state'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -25,7 +26,7 @@ import { useHasPermission } from '@/features/auth/hooks/use-has-permission'
 import { PERMISSIONS } from '@/lib/permissions'
 
 export function PositionsPage() {
-  const { data, isPending } = usePositions()
+  const { data, isPending, isError, error } = usePositions()
   const { data: departments } = useDepartments()
   const canWrite = useHasPermission(PERMISSIONS.ORG_WRITE)
   const createMutation = useCreatePosition()
@@ -37,6 +38,9 @@ export function PositionsPage() {
 
   if (isPending) {
     return <Loader />
+  }
+  if (isError) {
+    return <QueryErrorState error={error} />
   }
 
   const positions = data ?? []

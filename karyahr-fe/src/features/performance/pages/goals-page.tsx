@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { EmptyState } from '@/components/common/empty-state'
+import { ListPagination } from '@/components/common/list-pagination'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -39,7 +41,7 @@ export function GoalsPage() {
   const [page, setPage] = useState(1)
   const [dialogOpen, setDialogOpen] = useState(false)
   const createMutation = useCreateGoal()
-  const { data, isPending, isError } = useGoals({
+  const { data, isPending, isError, error } = useGoals({
     page,
     pageSize: 20,
     level,
@@ -55,7 +57,7 @@ export function GoalsPage() {
   }
 
   if (isError) {
-    return <EmptyState title="Could not load goals" />
+    return <QueryErrorState error={error} />
   }
 
   const goals = data?.data ?? []
@@ -196,23 +198,7 @@ export function GoalsPage() {
               ))}
             </TableBody>
           </Table>
-          <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-              Previous
-            </Button>
-            <p className="text-sm text-muted-foreground">
-              Page {data?.meta.page} of {data?.meta.totalPages || 1}
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={page >= (data?.meta.totalPages || 1)}
-              onClick={() => setPage(page + 1)}
-            >
-              Next
-            </Button>
-          </div>
+          <ListPagination page={page} totalPages={data?.meta.totalPages ?? 1} onPageChange={setPage} />
         </>
       )}
       <GoalFormDialog

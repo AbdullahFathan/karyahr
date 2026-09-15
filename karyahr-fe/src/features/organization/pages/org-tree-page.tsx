@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { EmptyState } from '@/components/common/empty-state'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -17,7 +18,7 @@ import type { OrgTreeNode } from '@/features/organization/types'
 export function OrgTreePage() {
   const { data: departments } = useDepartments()
   const [departmentId, setDepartmentId] = useState<string | undefined>()
-  const { data, isPending } = useOrgTree(departmentId)
+  const { data, isPending, isError, error } = useOrgTree(departmentId)
 
   return (
     <div className="flex flex-col gap-4">
@@ -41,6 +42,8 @@ export function OrgTreePage() {
       </Select>
       {isPending ? (
         <Loader />
+      ) : isError ? (
+        <QueryErrorState error={error} />
       ) : !data || data.length === 0 ? (
         <EmptyState title="No org tree" />
       ) : (

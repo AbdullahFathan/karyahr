@@ -2,6 +2,7 @@ import { type FormEvent, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { EmptyState } from '@/components/common/empty-state'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -43,7 +44,7 @@ export function ReviewPage() {
   const { data: me } = useAuth()
   const canWrite = useHasPermission(PERMISSIONS.PERFORMANCE_REVIEWS_WRITE)
   const canReadEmployees = useHasPermission(PERMISSIONS.EMPLOYEES_READ)
-  const { data: review, isPending, isError } = useReview(id)
+  const { data: review, isPending, isError, error } = useReview(id)
   const { data: cycle } = useCycle(review?.cycleId ?? '', Boolean(review?.cycleId))
   const { data: subject } = useEmployee(canReadEmployees ? (review?.employeeId ?? '') : '')
   const { data: employees } = useEmployees(
@@ -89,7 +90,11 @@ export function ReviewPage() {
     return <Loader />
   }
 
-  if (isError || !review) {
+  if (isError) {
+    return <QueryErrorState error={error} notFoundTitle="Review not found" />
+  }
+
+  if (!review) {
     return <EmptyState title="Review not found" />
   }
 

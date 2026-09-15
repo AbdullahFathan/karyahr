@@ -23,3 +23,13 @@ export function getApiErrorMessage(error: unknown): string {
 
   return FALLBACK_MESSAGE
 }
+
+/**
+ * Returns the HTTP status from an Axios error, or undefined when absent.
+ */
+export function getApiErrorStatus(error: unknown): number | undefined {
+  if (axios.isAxiosError(error)) {
+    return error.response?.status
+  }
+  return undefined
+}

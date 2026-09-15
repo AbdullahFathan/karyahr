@@ -16,6 +16,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { leaveRequestFormSchema } from '@/features/leave/schema'
 import { useCreateLeaveRequest, useLeaveTypes, useMyLeaveBalances } from '@/features/leave/hooks/use-leave'
+import { FILE_TYPE_NOT_ALLOWED, UPLOAD_ACCEPT, isAllowedUpload } from '@/lib/upload'
 import { todayJakarta } from '@/lib/dates'
 
 export function NewLeaveRequestPage() {
@@ -43,6 +44,10 @@ export function NewLeaveRequestPage() {
     })
     if (!parsed.success) {
       setFormError(parsed.error.issues[0]?.message ?? 'Check the form.')
+      return
+    }
+    if (parsed.data.file && !isAllowedUpload(parsed.data.file)) {
+      setFormError(FILE_TYPE_NOT_ALLOWED)
       return
     }
     createMutation.mutate(
@@ -116,6 +121,7 @@ export function NewLeaveRequestPage() {
             <Input
               id="leave-file"
               type="file"
+              accept={UPLOAD_ACCEPT}
               onChange={(event) =>
                 setValues((current) => ({ ...current, file: event.target.files?.[0] ?? undefined }))
               }

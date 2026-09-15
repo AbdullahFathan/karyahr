@@ -22,12 +22,12 @@ import { Spinner } from '@/components/ui/spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { useEmployees } from '@/features/employees/hooks/use-employees'
 import { useDepartments } from '@/features/organization/hooks/use-organization'
+import { KeyResultsEditor } from '@/features/performance/components/key-results-editor'
 import {
-  KeyResultsEditor,
   emptyKeyResultDraft,
   parseKeyResultDrafts,
   type KeyResultDraft,
-} from '@/features/performance/components/key-results-editor'
+} from '@/features/performance/components/key-results'
 import { createGoalSchema, type CreateGoalFormInput } from '@/features/performance/schema'
 import { GOAL_LEVELS, type GoalLevel } from '@/features/performance/types'
 

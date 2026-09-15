@@ -2,6 +2,7 @@ import { type FormEvent, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { EmptyState } from '@/components/common/empty-state'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
@@ -9,10 +10,12 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import {
   KeyResultsEditor,
+} from '@/features/performance/components/key-results-editor'
+import {
   draftsFromKeyResults,
   parseKeyResultDrafts,
   type KeyResultDraft,
-} from '@/features/performance/components/key-results-editor'
+} from '@/features/performance/components/key-results'
 import {
   useGoal,
   useGoalAction,
@@ -22,17 +25,28 @@ import {
 import { updateProgressSchema } from '@/features/performance/schema'
 import { useHasPermission } from '@/features/auth/hooks/use-has-permission'
 import { PERMISSIONS } from '@/lib/permissions'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 export function GoalDetailPage() {
   const { id = '' } = useParams()
   const canWrite = useHasPermission(PERMISSIONS.PERFORMANCE_GOALS_WRITE)
   const canMe = useHasPermission(PERMISSIONS.PERFORMANCE_GOALS_ME)
   const canApprove = useHasPermission(PERMISSIONS.PERFORMANCE_GOALS_APPROVE)
-  const { data: goal, isPending, isError } = useGoal(id)
+  const { data: goal, isPending, isError, error } = useGoal(id)
   const updateMutation = useUpdateGoal(id)
   const progressMutation = useUpdateGoalProgress(id)
   const actionMutation = useGoalAction(id)
   const [formError, setFormError] = useState<string | null>(null)
+  const [rejectOpen, setRejectOpen] = useState(false)
   const [title, setTitle] = useState<string | null>(null)
   const [description, setDescription] = useState<string | null>(null)
   const [drafts, setDrafts] = useState<KeyResultDraft[] | null>(null)
@@ -41,7 +55,10 @@ export function GoalDetailPage() {
     return <Loader />
   }
 
-  if (isError || !goal) {
+  if (isError) {
+    return <QueryErrorState error={error} notFoundTitle="Goal not found" />
+  }
+  if (!goal) {
     return <EmptyState title="Goal not found" />
   }
 
@@ -81,7 +98,7 @@ export function GoalDetailPage() {
               <Button type="button" onClick={() => actionMutation.mutate('approve')}>
                 Approve
               </Button>
-              <Button type="button" variant="outline" onClick={() => actionMutation.mutate('reject')}>
+              <Button type="button" variant="outline" onClick={() => setRejectOpen(true)}>
                 Reject
               </Button>
             </>
@@ -151,6 +168,26 @@ export function GoalDetailPage() {
           )}
         </div>
       )}
+      <AlertDialog open={rejectOpen} onOpenChange={setRejectOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reject this goal?</AlertDialogTitle>
+            <AlertDialogDescription>The owner can revise and submit again after you confirm.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                actionMutation.mutate('reject')
+                setRejectOpen(false)
+              }}
+            >
+              Reject
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { EmptyState } from '@/components/common/empty-state'
+import { ListPagination } from '@/components/common/list-pagination'
 import { Loader } from '@/components/common/loader'
+import { QueryErrorState } from '@/components/common/query-error-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -23,15 +25,14 @@ import {
 import { useJobs } from '@/features/recruitment/hooks/use-recruitment'
 import { JOB_POSTING_STATUSES, type JobPostingStatus } from '@/features/recruitment/types'
 import { useDepartments, usePositions } from '@/features/organization/hooks/use-organization'
-import { useHasPermission } from '@/features/auth/hooks/use-has-permission'
+import { Can } from '@/features/auth/components/can'
 import { PERMISSIONS } from '@/lib/permissions'
 import { toDateInputValue } from '@/lib/dates'
 
 export function JobsPage() {
-  const canWrite = useHasPermission(PERMISSIONS.RECRUITMENT_JOBS_WRITE)
   const [status, setStatus] = useState<JobPostingStatus | undefined>()
   const [page, setPage] = useState(1)
-  const { data, isPending, isError } = useJobs({ status, page, pageSize: 20 })
+  const { data, isPending, isError, error } = useJobs({ status, page, pageSize: 20 })
   const { data: departments } = useDepartments()
   const { data: positions } = usePositions()
   const departmentName = new Map((departments ?? []).map((item) => [item.id, item.name]))
@@ -42,7 +43,7 @@ export function JobsPage() {
   }
 
   if (isError) {
-    return <EmptyState title="Could not load jobs" />
+    return <QueryErrorState error={error} />
   }
 
   const jobs = data?.data ?? []
@@ -71,11 +72,11 @@ export function JobsPage() {
             </SelectGroup>
           </SelectContent>
         </Select>
-        {canWrite ? (
+        <Can permission={PERMISSIONS.RECRUITMENT_JOBS_WRITE}>
           <Button asChild>
             <Link to="/recruitment/jobs/new">Create job</Link>
           </Button>
-        ) : null}
+        </Can>
       </div>
       {jobs.length === 0 ? (
         <EmptyState title="No jobs" />
@@ -115,23 +116,7 @@ export function JobsPage() {
               ))}
             </TableBody>
           </Table>
-          <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-              Previous
-            </Button>
-            <p className="text-sm text-muted-foreground">
-              Page {data?.meta.page} of {data?.meta.totalPages || 1}
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={page >= (data?.meta.totalPages || 1)}
-              onClick={() => setPage(page + 1)}
-            >
-              Next
-            </Button>
-          </div>
+          <ListPagination page={page} totalPages={data?.meta.totalPages ?? 1} onPageChange={setPage} />
         </>
       )}
     </div>
